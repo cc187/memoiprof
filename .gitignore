@@ -50,3 +50,13 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Build
+/build/**
+/cmake-build-debug/**
+/cmake-build-release/**
+
+# Jetbrains
+**/.idea/workspace.xml
+**/.idea/tasks.xml
+**/.idea/usage.statistics.xml
