@@ -3,57 +3,15 @@
 //
 
 #include "MemoiProfiler.h"
+#include "MemoiUtils.h"
+#include "MemoiRecord.h"
+#include "cJSON.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <glib.h>
-#include "cJSON.h"
-
-
-/***********************************************************************************************************************
- *
- * MemoiRecord
- *
- ***********************************************************************************************************************
- *
- */
-
-
-MemoiRec *mr_init(uint64_t input, unsigned int counter, uint64_t output) {
-
-    MemoiRec *mr = malloc(sizeof(*mr));
-
-    mr->input = input;
-    mr->counter = counter;
-    mr->output = output;
-
-    return mr;
-}
-
-
-MemoiRec *mr_destroy(MemoiRec *mr) {
-
-    free(mr);
-
-    return NULL;
-}
-
-void mr_print(MemoiRec *mr) {
-
-    printf("------------------------\n");
-    printf("\tinput   : 0x%lx\n", mr->input);
-    printf("\toutput  : 0x%lx\n", mr->output);
-    printf("\tcounter : %u\n", mr->counter);
-}
-
-
-/***********************************************************************************************************************
- *
- * MemoiProfiler
- *
- ***********************************************************************************************************************
- *
- */
+#include <stdarg.h>
 
 struct mp_t {
 
@@ -77,7 +35,7 @@ static uint64_t mp_get_bits(MemoiProf *mi, void *value);
 
 static void print_table(void *key, void *mr, void *input_type);
 
-static void print_json(void *key, void *mr, void *input_type);
+static void print_json(void *key, void *mr, void *user_data);
 
 static unsigned int memoi_float_hash(const void *key);
 
@@ -153,7 +111,7 @@ void mp_inc(MemoiProf *mp, void *input, void *output) {
     if (mr != NULL) {
 
         mp->hits++;
-        ((MemoiRec *) mr)->counter++;
+        mr_inc_counter(mr);
     } else {
 
         uint64_t input_bits = mp_get_bits(mp, input);
@@ -188,43 +146,6 @@ void mp_to_json(MemoiProf *mi, const char *filename) {
     g_hash_table_foreach(mi->table, print_json, &(mi->input_type));
 
     write_json_and_cleanup(filename);
-
-}
-
-void mp_to_simple_json(MemoiProf *mi, const char *filename) {
-
-    make_simple_json(mi);
-    write_json_and_cleanup(filename);
-}
-
-void mp_all_to_simple_json(const char *filename, unsigned int count, ...) {
-
-    va_list ap;
-    va_start(ap, count);
-
-    json_root = cJSON_CreateObject();
-
-    for (unsigned int i = 0; i < count; ++i) {
-
-        MemoiProf *mi = va_arg(ap, MemoiProf *);
-
-        if (mi == NULL) {
-            continue;
-        }
-
-        cJSON *object = cJSON_CreateObject();
-
-        cJSON_AddNumberToObject(object, "elements", g_hash_table_size(mi->table));
-        cJSON_AddNumberToObject(object, "calls", mi->calls);
-        cJSON_AddNumberToObject(object, "hits", mi->hits);
-        cJSON_AddNumberToObject(object, "misses", mi->calls - mi->hits);
-
-        cJSON_AddItemToObject(json_root, mi->name, object);
-    }
-
-    write_json_and_cleanup(filename);
-
-    va_end(ap);
 }
 
 
@@ -300,11 +221,11 @@ static void print_table(void *key, void *mr, void *input_type) {
 
 /**
  *      Callback function used to print the table to a JSON file.
- * @param key The key
+ * @param key no used
  * @param mr The record
- * @param input_type The C type of the input
+ * @param user_data not used
  */
-void print_json(void *key, void *mr, void *input_type) {
+void print_json(void *key, void *mr, void *user_data) {
 
     const uint64_t input_bits = ((MemoiRec *) mr)->input;
     const uint64_t output_bits = ((MemoiRec *) mr)->output;

@@ -51,13 +51,10 @@ int main() {
     mp_inc(mi2, &i12, &o12);
     mp_inc(mi2, &i12, &o12);
 
-    mp_all_to_simple_json("/home/pedro/Documents/cJSON_output.txt", 2, mi, mi2);
-    mp_to_json(mi, "/home/pedro/Documents/cJSON_output.txt");
+    mp_to_json(mi, "mi.json");
+    mp_to_json(mi2, "mi2.json");
 
     mi2 = mp_destroy(mi2);
-    /*  */
-
-
     mi = mp_destroy(mi);
 
     return 0;

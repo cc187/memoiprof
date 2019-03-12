@@ -1,12 +1,12 @@
 # SOURCES
 set(MP_SRC
-	MemoiProfiler.c
-	MemoiProfiler.h
-	)
+        MemoiProfiler.c
+        MemoiProfiler.h
+        MemoiRecord.c
+        MemoiRecord.h MemoiUtils.c MemoiUtils.h)
 
 set(MP_RUN_SRC
-	main.c
-	)
+        main.c)
 
 # LOAD SUBDIRECTORIES
 add_subdirectory(cJSON)
@@ -14,7 +14,7 @@ add_subdirectory(cJSON)
 # BUILD LIBRARY
 if (SHARED)
     add_library(mp SHARED ${MP_SRC})
-else()
+else ()
     add_library(mp STATIC ${MP_SRC})
 endif ()
 
