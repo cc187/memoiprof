@@ -2,7 +2,7 @@
 // Created by pedro on 11-11-2016.
 //
 
-#include "MemoiInstrumenter.h"
+#include "MemoiProfiler.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,9 +19,9 @@
  */
 
 
-MemoiRecord *memoi_rec_init(uint64_t input, unsigned int counter, uint64_t output) {
+MemoiRec *mr_init(uint64_t input, unsigned int counter, uint64_t output) {
 
-    MemoiRecord *mr = malloc(sizeof(*mr));
+    MemoiRec *mr = malloc(sizeof(*mr));
 
     mr->input = input;
     mr->counter = counter;
@@ -31,14 +31,14 @@ MemoiRecord *memoi_rec_init(uint64_t input, unsigned int counter, uint64_t outpu
 }
 
 
-MemoiRecord *memoi_rec_destroy(MemoiRecord *mr) {
+MemoiRec *mr_destroy(MemoiRec *mr) {
 
     free(mr);
 
     return NULL;
 }
 
-void memoi_rec_print(MemoiRecord *mr) {
+void mr_print(MemoiRec *mr) {
 
     printf("------------------------\n");
     printf("\tinput   : 0x%lx\n", mr->input);
@@ -49,13 +49,13 @@ void memoi_rec_print(MemoiRecord *mr) {
 
 /***********************************************************************************************************************
  *
- * MemoiInstrumenter
+ * MemoiProfiler
  *
  ***********************************************************************************************************************
  *
  */
 
-typedef struct mi_t {
+struct mp_t {
 
     char *name;
 
@@ -68,16 +68,12 @@ typedef struct mi_t {
     unsigned int hits;
 };
 
-#define NEW_AND_COPY(name, type, source) \
-name = malloc(sizeof *name);\
-*name = *((type *) source);
-
 static cJSON *json_root;
 static cJSON *json_array;
 
-static void *memoi_inst_get_key(MemoiInstrumenter *mi, void *input);
+static void *mp_dup_input(MemoiProf *mi, void *input);
 
-static uint64_t memoi_inst_get_bits(MemoiInstrumenter *mi, void *value);
+static uint64_t mp_get_bits(MemoiProf *mi, void *value);
 
 static void print_table(void *key, void *mr, void *input_type);
 
@@ -89,36 +85,36 @@ static int memoi_float_equal(const void *a, const void *b);
 
 static void write_json_and_cleanup(const char *filename);
 
-static void make_simple_json(const MemoiInstrumenter *mi);
+static void make_simple_json(const MemoiProf *mi);
 
-MemoiInstrumenter *memoi_inst_init(const char *name, CType type) {
+MemoiProf *mp_init(const char *name, CType type) {
 
-    MemoiInstrumenter *mi = malloc(sizeof *mi);
+    MemoiProf *mp = malloc(sizeof *mp);
 
     size_t name_size = strlen(name) + 1;
-    mi->name = calloc(name_size, sizeof *(mi->name));
-    strcpy(mi->name, name);
+    mp->name = calloc(name_size, sizeof *(mp->name));
+    strcpy(mp->name, name);
 
-    mi->input_type = type;
-    mi->output_type = type;
+    mp->input_type = type;
+    mp->output_type = type;
 
-    mi->calls = 0;
-    mi->hits = 0;
+    mp->calls = 0;
+    mp->hits = 0;
 
     switch (type) {
 
         case FLOAT:
-            mi->table = g_hash_table_new_full(memoi_float_hash, memoi_float_equal, g_free, g_free);
+            mp->table = g_hash_table_new_full(memoi_float_hash, memoi_float_equal, g_free, g_free);
             break;
         case DOUBLE:
-            mi->table = g_hash_table_new_full(g_double_hash, g_double_equal, g_free, g_free);
+            mp->table = g_hash_table_new_full(g_double_hash, g_double_equal, g_free, g_free);
             break;
         case INT:
-            mi->table = g_hash_table_new_full(g_int_hash, g_int_equal, g_free, g_free);
+            mp->table = g_hash_table_new_full(g_int_hash, g_int_equal, g_free, g_free);
             break;
     }
 
-    return mi;
+    return mp;
 }
 
 static unsigned int memoi_float_hash(const void *key) {
@@ -131,46 +127,46 @@ static int memoi_float_equal(const void *a, const void *b) {
     return *(const float *) a == *(const float *) b;
 }
 
-MemoiInstrumenter *memoi_inst_destroy(MemoiInstrumenter *mi) {
+MemoiProf *mp_destroy(MemoiProf *mp) {
 
-    if (mi != NULL) {
+    if (mp != NULL) {
 
-        free(mi->name);
-        g_hash_table_destroy(mi->table);
-        free(mi);
+        free(mp->name);
+        g_hash_table_destroy(mp->table);
+        free(mp);
     }
 
     return NULL;
 }
 
 
-void memoi_inst_inc(MemoiInstrumenter *mi, void *input, void *output) {
+void mp_inc(MemoiProf *mp, void *input, void *output) {
 
-    if (mi == NULL) {
+    if (mp == NULL) {
         return;
     }
 
-    mi->calls++;
+    mp->calls++;
 
-    void *mr = g_hash_table_lookup(mi->table, input);
+    void *mr = g_hash_table_lookup(mp->table, input);
 
     if (mr != NULL) {
 
-        mi->hits++;
-        ((MemoiRecord *) mr)->counter++;
+        mp->hits++;
+        ((MemoiRec *) mr)->counter++;
     } else {
 
-        uint64_t input_bits = memoi_inst_get_bits(mi, input);
-        uint64_t output_bits = memoi_inst_get_bits(mi, output);
-        MemoiRecord *new_mr = memoi_rec_init(input_bits, 1, output_bits);
+        uint64_t input_bits = mp_get_bits(mp, input);
+        uint64_t output_bits = mp_get_bits(mp, output);
+        MemoiRec *new_mr = mr_init(input_bits, 1, output_bits);
 
-        void *key = memoi_inst_get_key(mi, input);
-        g_hash_table_insert(mi->table, key, new_mr);
+        void *key = mp_dup_input(mp, input);
+        g_hash_table_insert(mp->table, key, new_mr);
     }
 }
 
 
-void memoi_inst_print(MemoiInstrumenter *mi) {
+void mp_print(MemoiProf *mi) {
 
     printf("==================================================\n");
     printf("Table '%s', %u elements, %u calls (%uh, %um)\n\n", mi->name, g_hash_table_size(mi->table), mi->calls,
@@ -182,7 +178,7 @@ void memoi_inst_print(MemoiInstrumenter *mi) {
     printf("==================================================\n");
 }
 
-void memoi_inst_to_json(MemoiInstrumenter *mi, const char *filename) {
+void mp_to_json(MemoiProf *mi, const char *filename) {
 
     make_simple_json(mi);
 
@@ -195,22 +191,22 @@ void memoi_inst_to_json(MemoiInstrumenter *mi, const char *filename) {
 
 }
 
-void memoi_inst_to_simple_json(MemoiInstrumenter *mi, const char *filename) {
+void mp_to_simple_json(MemoiProf *mi, const char *filename) {
 
     make_simple_json(mi);
     write_json_and_cleanup(filename);
 }
 
-void memoi_inst_all_to_simple_json(const char *filename, unsigned int count, ...) {
+void mp_all_to_simple_json(const char *filename, unsigned int count, ...) {
 
     va_list ap;
     va_start(ap, count);
 
     json_root = cJSON_CreateObject();
 
-    for (int i = 0; i < count; ++i) {
+    for (unsigned int i = 0; i < count; ++i) {
 
-        MemoiInstrumenter *mi = va_arg(ap, MemoiInstrumenter *);
+        MemoiProf *mi = va_arg(ap, MemoiProf *);
 
         if (mi == NULL) {
             continue;
@@ -232,7 +228,7 @@ void memoi_inst_all_to_simple_json(const char *filename, unsigned int count, ...
 }
 
 
-static void make_simple_json(const MemoiInstrumenter *mi) {
+static void make_simple_json(const MemoiProf *mi) {
 
     json_root = cJSON_CreateObject();
 
@@ -275,8 +271,8 @@ static void print_table(void *key, void *mr, void *input_type) {
     double output_double;
     int output_int;
 
-    const uint64_t bits = ((MemoiRecord *) mr)->output;
-    const unsigned int counter = ((MemoiRecord *) mr)->counter;
+    const uint64_t bits = ((MemoiRec *) mr)->output;
+    const unsigned int counter = ((MemoiRec *) mr)->counter;
 
     switch (*(CType *) input_type) {
 
@@ -310,9 +306,9 @@ static void print_table(void *key, void *mr, void *input_type) {
  */
 void print_json(void *key, void *mr, void *input_type) {
 
-    const uint64_t input_bits = ((MemoiRecord *) mr)->input;
-    const uint64_t output_bits = ((MemoiRecord *) mr)->output;
-    const unsigned int counter = ((MemoiRecord *) mr)->counter;
+    const uint64_t input_bits = ((MemoiRec *) mr)->input;
+    const uint64_t output_bits = ((MemoiRec *) mr)->output;
+    const unsigned int counter = ((MemoiRec *) mr)->counter;
 
     cJSON *count = cJSON_CreateObject();
 
@@ -330,7 +326,7 @@ void print_json(void *key, void *mr, void *input_type) {
     cJSON_AddItemToArray(json_array, count);
 }
 
-static uint64_t memoi_inst_get_bits(MemoiInstrumenter *mi, void *value) {
+static uint64_t mp_get_bits(MemoiProf *mi, void *value) {
 
     uint64_t bits64;
     uint32_t bits32;
@@ -359,30 +355,35 @@ static uint64_t memoi_inst_get_bits(MemoiInstrumenter *mi, void *value) {
     return 0u;
 }
 
-
-static void *memoi_inst_get_key(MemoiInstrumenter *mi, void *input) {
+/**
+ *      Duplicates the given input. Allocates memory for a new variable of the same type, copies the content and
+ *  returns the new value.
+ * @param mi
+ * @param input
+ * @return
+ */
+static void *mp_dup_input(MemoiProf *mi, void *input) {
 
     float *new_float;
     double *new_double;
     int *new_int;
 
     switch (mi->input_type) {
-        case FLOAT:
 
-        NEW_AND_COPY(new_float, float, input)
+        case FLOAT:
+            new_float = malloc(sizeof *new_float);
+            *new_float = *((float *) input);
             return new_float;
 
         case DOUBLE:
-
-        NEW_AND_COPY(new_double, double, input)
+            new_double = malloc(sizeof *new_double);\
+            *new_double = *((double *) input);
             return new_double;
-        case INT:
 
-        NEW_AND_COPY(new_int, int, input)
+        case INT:
+            new_int = malloc(sizeof *new_int);\
+            *new_int = *((int *) input);
             return new_int;
     }
     return NULL;
 }
-
-
-
