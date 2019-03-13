@@ -20,6 +20,22 @@ void mp_print(MemoiProf *mi);
 
 void mp_to_json(MemoiProf *mi, const char *filename);
 
+// getters
+
+CType mp_get_input_type(const MemoiProf* mp);
+
+const char* mp_get_name(const MemoiProf* mp);
+
+unsigned int mp_get_table_size(const MemoiProf* mp);
+
+unsigned int mp_get_calls(const MemoiProf* mp);
+
+unsigned int mp_get_hits(const MemoiProf* mp);
+
+unsigned int mp_get_misses(const MemoiProf* mp);
+
+
+
 #endif // MEMOIPROF_MEMOIPROFILER_H
 
 

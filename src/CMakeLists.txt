@@ -3,7 +3,7 @@ set(MP_SRC
         MemoiProfiler.c
         MemoiProfiler.h
         MemoiRecord.c
-        MemoiRecord.h MemoiUtils.c MemoiUtils.h)
+        MemoiRecord.h MemoiUtils.h MemoiProfilerUtils.c MemoiProfilerUtils.h)
 
 set(MP_RUN_SRC
         main.c)

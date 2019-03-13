@@ -3,6 +3,7 @@
 //
 
 #include "MemoiProfiler.h"
+#include "MemoiProfilerUtils.h"
 #include "MemoiUtils.h"
 #include "MemoiRecord.h"
 #include "cJSON.h"
@@ -12,6 +13,7 @@
 #include <stdio.h>
 #include <glib.h>
 #include <stdarg.h>
+
 
 struct mp_t {
 
@@ -26,22 +28,6 @@ struct mp_t {
     unsigned int hits;
 };
 
-
-static void *mp_dup_input(MemoiProf *mi, void *input);
-
-static uint64_t mp_get_bits(MemoiProf *mi, void *value);
-
-static void print_table(void *key, void *mr, void *input_type);
-
-static void print_json(void *key, void *mr, void *user_data);
-
-static unsigned int memoi_float_hash(const void *key);
-
-static int memoi_float_equal(const void *a, const void *b);
-
-static void write_json_and_cleanup(const char *filename, cJSON *json_root);
-
-static cJSON * make_simple_json(const MemoiProf *mi);
 
 MemoiProf *mp_init(const char *name, CType type) {
 
@@ -73,15 +59,6 @@ MemoiProf *mp_init(const char *name, CType type) {
     return mp;
 }
 
-static unsigned int memoi_float_hash(const void *key) {
-
-    return *(const uint32_t *) key;
-}
-
-static int memoi_float_equal(const void *a, const void *b) {
-
-    return *(const float *) a == *(const float *) b;
-}
 
 MemoiProf *mp_destroy(MemoiProf *mp) {
 
@@ -129,182 +106,50 @@ void mp_print(MemoiProf *mi) {
            mi->hits, mi->calls - mi->hits);
 
 
-    g_hash_table_foreach(mi->table, print_table, &(mi->input_type));
+    g_hash_table_foreach(mi->table, mr_print, &(mi->input_type));
 
     printf("==================================================\n");
 }
 
+
 void mp_to_json(MemoiProf *mi, const char *filename) {
 
-    cJSON* json_root = make_simple_json(mi);
+    cJSON* json_root = make_json_header(mi);
 
     /* counts array */
     cJSON *json_array = cJSON_CreateArray();
     cJSON_AddItemToObject(json_root, "counts", json_array);
-    g_hash_table_foreach(mi->table, print_json, json_array);
+    g_hash_table_foreach(mi->table, mr_make_json, json_array);
 
     write_json_and_cleanup(filename, json_root);
 }
 
 
-static cJSON * make_simple_json(const MemoiProf *mi) {
-
-    cJSON *json_root = cJSON_CreateObject();
-
-    /* table information */
-    cJSON_AddStringToObject(json_root, "name", mi->name);
-    cJSON_AddNumberToObject(json_root, "elements", g_hash_table_size(mi->table));
-    cJSON_AddNumberToObject(json_root, "calls", mi->calls);
-    cJSON_AddNumberToObject(json_root, "hits", mi->hits);
-    cJSON_AddNumberToObject(json_root, "misses", mi->calls - mi->hits);
-
-    return json_root;
-}
-
-static void write_json_and_cleanup(const char *filename, cJSON *json_root) {
-
-    FILE *f = fopen(filename, "w");
-    if (f == NULL) {
-
-        printf("Error opening file: %s\n", filename);
-        return;
-    }
-
-    char *output = cJSON_Print(json_root);
-    fprintf(f, "%s", output);
-
-    free(output);
-    cJSON_Delete(json_root);
-    fclose(f);
+CType mp_get_input_type(const MemoiProf *mp) {
+    return mp->input_type;
 }
 
 
-/**
- *      Callback function used to print the table to the standard output.
- *
- * @param key The key
- * @param mr The record
- * @param input_type The C type of the input
- */
-static void print_table(void *key, void *mr, void *input_type) {
-
-    float output_float;
-    double output_double;
-    int output_int;
-
-    const uint64_t bits = ((MemoiRec *) mr)->output;
-    const unsigned int counter = ((MemoiRec *) mr)->counter;
-
-    switch (*(CType *) input_type) {
-
-        case FLOAT:
-
-            output_float = *(float *) &bits;
-            printf("%f ---> %f (%ux)\n", *(float *) key, output_float, counter);
-            break;
-
-        case DOUBLE:
-
-            output_double = *(double *) &bits;
-            printf("%f ---> %f (%ux)\n", *(double *) key, output_double, counter);
-            break;
-
-        case INT:
-
-            output_int = *(int *) &bits;
-            printf("%d ---> %d (%ux)\n", *(int *) key, output_int, counter);
-            break;
-
-    }
-
+const char* mp_get_name(const MemoiProf* mp) {
+    return mp->name;
 }
 
-/**
- *      Callback function used to print the table to a JSON file.
- * @param key no used
- * @param mr The record
- * @param json_array the array where we append the record information
- */
-void print_json(void *key, void *mr, void *json_array) {
 
-    const uint64_t input_bits = ((MemoiRec *) mr)->input;
-    const uint64_t output_bits = ((MemoiRec *) mr)->output;
-    const unsigned int counter = ((MemoiRec *) mr)->counter;
-
-    cJSON *count = cJSON_CreateObject();
-
-    char hex_string[17];
-
-
-    snprintf(hex_string, 17, "%016lx", input_bits);
-    cJSON_AddStringToObject(count, "key", hex_string);
-
-    snprintf(hex_string, 17, "%016lx", output_bits);
-    cJSON_AddStringToObject(count, "output", hex_string);
-
-    cJSON_AddNumberToObject(count, "counter", counter);
-
-    cJSON_AddItemToArray(json_array, count);
+unsigned int mp_get_table_size(const MemoiProf* mp) {
+    return g_hash_table_size(mp->table);
 }
 
-static uint64_t mp_get_bits(MemoiProf *mi, void *value) {
 
-    uint64_t bits64;
-    uint32_t bits32;
-
-    switch (mi->input_type) {
-        case FLOAT:
-
-            bits32 = *(uint32_t *) value;
-            bits64 = bits32;
-
-            return bits64 & 0xFFFFFFFF;
-
-        case DOUBLE:
-
-            bits64 = *(uint64_t *) value;
-            return bits64;
-
-        case INT:
-
-            bits32 = *(uint32_t *) value;
-            bits64 = bits32;
-
-            return bits64 & 0xFFFFFFFF;
-    }
-
-    return 0u;
+unsigned int mp_get_calls(const MemoiProf* mp) {
+    return mp->calls;
 }
 
-/**
- *      Duplicates the given input. Allocates memory for a new variable of the same type, copies the content and
- *  returns the new value.
- * @param mi
- * @param input
- * @return
- */
-static void *mp_dup_input(MemoiProf *mi, void *input) {
 
-    float *new_float;
-    double *new_double;
-    int *new_int;
+unsigned int mp_get_hits(const MemoiProf* mp) {
+    return mp->hits;
+}
 
-    switch (mi->input_type) {
 
-        case FLOAT:
-            new_float = malloc(sizeof *new_float);
-            *new_float = *((float *) input);
-            return new_float;
-
-        case DOUBLE:
-            new_double = malloc(sizeof *new_double);\
-            *new_double = *((double *) input);
-            return new_double;
-
-        case INT:
-            new_int = malloc(sizeof *new_int);\
-            *new_int = *((int *) input);
-            return new_int;
-    }
-    return NULL;
+unsigned int mp_get_misses(const MemoiProf* mp) {
+    return mp->calls - mp->hits;
 }
