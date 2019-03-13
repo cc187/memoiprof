@@ -26,8 +26,6 @@ struct mp_t {
     unsigned int hits;
 };
 
-static cJSON *json_root;
-static cJSON *json_array;
 
 static void *mp_dup_input(MemoiProf *mi, void *input);
 
@@ -41,9 +39,9 @@ static unsigned int memoi_float_hash(const void *key);
 
 static int memoi_float_equal(const void *a, const void *b);
 
-static void write_json_and_cleanup(const char *filename);
+static void write_json_and_cleanup(const char *filename, cJSON *json_root);
 
-static void make_simple_json(const MemoiProf *mi);
+static cJSON * make_simple_json(const MemoiProf *mi);
 
 MemoiProf *mp_init(const char *name, CType type) {
 
@@ -138,20 +136,20 @@ void mp_print(MemoiProf *mi) {
 
 void mp_to_json(MemoiProf *mi, const char *filename) {
 
-    make_simple_json(mi);
+    cJSON* json_root = make_simple_json(mi);
 
     /* counts array */
-    json_array = cJSON_CreateArray();
+    cJSON *json_array = cJSON_CreateArray();
     cJSON_AddItemToObject(json_root, "counts", json_array);
-    g_hash_table_foreach(mi->table, print_json, &(mi->input_type));
+    g_hash_table_foreach(mi->table, print_json, json_array);
 
-    write_json_and_cleanup(filename);
+    write_json_and_cleanup(filename, json_root);
 }
 
 
-static void make_simple_json(const MemoiProf *mi) {
+static cJSON * make_simple_json(const MemoiProf *mi) {
 
-    json_root = cJSON_CreateObject();
+    cJSON *json_root = cJSON_CreateObject();
 
     /* table information */
     cJSON_AddStringToObject(json_root, "name", mi->name);
@@ -159,9 +157,11 @@ static void make_simple_json(const MemoiProf *mi) {
     cJSON_AddNumberToObject(json_root, "calls", mi->calls);
     cJSON_AddNumberToObject(json_root, "hits", mi->hits);
     cJSON_AddNumberToObject(json_root, "misses", mi->calls - mi->hits);
+
+    return json_root;
 }
 
-static void write_json_and_cleanup(const char *filename) {
+static void write_json_and_cleanup(const char *filename, cJSON *json_root) {
 
     FILE *f = fopen(filename, "w");
     if (f == NULL) {
@@ -223,9 +223,9 @@ static void print_table(void *key, void *mr, void *input_type) {
  *      Callback function used to print the table to a JSON file.
  * @param key no used
  * @param mr The record
- * @param user_data not used
+ * @param json_array the array where we append the record information
  */
-void print_json(void *key, void *mr, void *user_data) {
+void print_json(void *key, void *mr, void *json_array) {
 
     const uint64_t input_bits = ((MemoiRec *) mr)->input;
     const uint64_t output_bits = ((MemoiRec *) mr)->output;
