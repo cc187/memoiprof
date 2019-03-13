@@ -95,6 +95,13 @@ int memoi_float_equal(const void *a, const void *b) {
     return *(const float *) a == *(const float *) b;
 }
 
+
+/**
+ *      WE ARE ASSUMING THIS IS EQUAL TO THE RESULT RETURND BY THE HASH FUNCTION!
+ * @param mp
+ * @param value
+ * @return
+ */
 uint64_t mp_get_bits(MemoiProf *mp, void *value) {
 
     uint64_t bits64;

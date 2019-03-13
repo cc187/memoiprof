@@ -51,6 +51,8 @@ void mr_inc_counter(MemoiRec *mr) {
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 void mr_make_json(void *key, void *mr, void *json_array) {
 
     const uint64_t input_bits = ((MemoiRec *) mr)->input;
@@ -72,6 +74,7 @@ void mr_make_json(void *key, void *mr, void *json_array) {
 
     cJSON_AddItemToArray(json_array, count);
 }
+#pragma GCC diagnostic pop
 
 
 void mr_print(void *key, void *mr, void *input_type) {

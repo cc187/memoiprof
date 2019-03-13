@@ -87,10 +87,6 @@ MemoiProf *mp_destroy(MemoiProf *mp) {
 
 void mp_inc(MemoiProf *mp, void *input, void *output) {
 
-    if (mp == NULL) {
-        return;
-    }
-
     mp->calls++;
 
     void *mr = g_hash_table_lookup(mp->table, input);
