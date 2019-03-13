@@ -47,11 +47,22 @@ cJSON * make_json_header(const MemoiProf *mp) {
     cJSON *json_root = cJSON_CreateObject();
 
     /* table information */
-    cJSON_AddStringToObject(json_root, "name", mp_get_name(mp));
+    cJSON_AddStringToObject(json_root, "id", mp_get_id(mp));
+    cJSON_AddStringToObject(json_root, "func_name", mp_get_func_name(mp));
     cJSON_AddNumberToObject(json_root, "elements", mp_get_table_size(mp));
     cJSON_AddNumberToObject(json_root, "calls", mp_get_calls(mp));
     cJSON_AddNumberToObject(json_root, "hits", mp_get_hits(mp));
     cJSON_AddNumberToObject(json_root, "misses", mp_get_misses(mp));
+
+    cJSON *call_sites_array = cJSON_CreateArray();
+    cJSON_AddItemToObject(json_root, "call_sites", call_sites_array);
+
+    unsigned int call_site_count = mp_get_call_site_count(mp);
+    const char** call_sites = mp_get_call_sites(mp);
+    for (unsigned int i = 0; i < call_site_count; ++i) {
+
+        cJSON_AddItemToArray(call_sites_array, cJSON_CreateString(call_sites[i]));
+    }
 
     return json_root;
 }

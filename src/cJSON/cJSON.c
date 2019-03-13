@@ -1156,15 +1156,15 @@ parse_object(cJSON *const item, const unsigned char *input, const unsigned char 
             current_item = new_item;
         }
 
-        /* parse the name of the child */
+        /* parse the id of the child */
         input = skip_whitespace(input + 1);
         input = parse_string(current_item, input, error_pointer, hooks);
         input = skip_whitespace(input);
         if (input == NULL) {
-            goto fail; /* faile to parse name */
+            goto fail; /* faile to parse id */
         }
 
-        /* swap valuestring and string, because we parsed the name */
+        /* swap valuestring and string, because we parsed the id */
         current_item->string = current_item->valuestring;
         current_item->valuestring = NULL;
 
