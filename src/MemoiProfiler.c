@@ -37,7 +37,7 @@ MemoiProf *mp_init(const char *func_name, const char *id, CType type) {
 
     MemoiProf *mp = malloc(sizeof *mp);
 
-    size_t name_size = strlen(func_name);
+    size_t name_size = strlen(func_name) + 1;
     mp->func_name = calloc(name_size, sizeof *(mp->func_name));
     strcpy(mp->func_name, func_name);
 
