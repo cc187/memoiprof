@@ -2,6 +2,7 @@
 
 #include "MemoiProfiler.h"
 #include "cJSON.h"
+#include "zf_log.h"
 
 #include <glib.h>
 #include <stdio.h>
@@ -41,8 +42,10 @@ void hash_table_test() {
 }
 
 void profiler_test() {
+
+
     printf("-= Memoization Profiler Test =-\n");
-    /*
+
     MemoiProf *mp = mp_init("log", "test", FLOAT, 1, FLOAT);
 
     float i1 = 3.14f;
@@ -50,7 +53,7 @@ void profiler_test() {
     float i2 = 1.0f;
     float o2 = 0.0f;
 
-    mp_add_call_sites(mp, 2, "main.c:19", "main.c:22");
+    mp_set_call_sites(mp, 2, "main.c:19", "main.c:22");
 
     mp_inc(mp, &i1, &o1);
     mp_inc(mp, &i1, &o1);
@@ -78,6 +81,9 @@ void profiler_test() {
 
     mp_print(mp);
 
+    mp_to_json(mp, "mp.json");
+    mp = mp_destroy(mp);
+
 
     MemoiProf *mi2 = mp_init("log", "tested", DOUBLE, 1, DOUBLE);
 
@@ -89,13 +95,12 @@ void profiler_test() {
     mp_inc(mi2, &i12, &o12);
     mp_inc(mi2, &i12, &o12);
 
-    mp_to_json(mp, "mp.json");
     mp_to_json(mi2, "mi2.json");
+    mi2 = mp_destroy(mi2);
 
 
-    /**/
     MemoiProf *mp_pow = mp_init("pow(double,double)", "2 args", DOUBLE, 2, DOUBLE, FLOAT);
-    mp_add_call_sites(mp_pow, 1, "global");
+    mp_set_call_sites(mp_pow, 1, "global");
 
     double base = 2.0;
     float power = 8.0f;
@@ -107,10 +112,4 @@ void profiler_test() {
 
     mp_to_json(mp_pow, "mp_pow.json");
 
-    mp_pow = mp_destroy(mp_pow);
-
-    /*
-    mi2 = mp_destroy(mi2);
-    mp = mp_destroy(mp);
-     /**/
-}
+    mp_pow = mp_destroy(mp_pow);}

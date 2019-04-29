@@ -7,6 +7,7 @@
 #include "MemoiUtils.h"
 #include "MemoiRecord.h"
 #include "cJSON.h"
+#include "zf_log.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -35,6 +36,8 @@ struct mp_t {
 };
 
 MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsigned int input_count, ...) {
+
+    ZF_LOGI("initializing '%s' for '%s %s'", id, mp_type_to_string(output_type), func_sig);
 
     va_list ap;
     va_start(ap, input_count);
@@ -67,6 +70,7 @@ MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsi
     mp->hits = 0;
 
     mp->call_site_count = 0;
+    mp->call_sites = NULL;
 
     mp->table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
@@ -156,7 +160,7 @@ void mp_to_json(MemoiProf *mp, const char *filename) {
 }
 
 
-void mp_add_call_sites(MemoiProf *mp, unsigned int count, ...) {
+void mp_set_call_sites(MemoiProf *mp, unsigned int count, ...) {
 
     va_list ap;
     va_start(ap, count);

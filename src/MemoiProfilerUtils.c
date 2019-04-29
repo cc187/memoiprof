@@ -3,49 +3,12 @@
 //
 
 #include "MemoiProfilerUtils.h"
+#include "zf_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-
-
-/**
- *      Duplicates the given input. Allocates memory for a new variable of the same type, copies the content and
- *  returns the new value.
- *
- * @deprecated
- *
- * @param mp
- * @param input
- * @return a pointer with a copy of the input
- */
-void *mp_dup_input(MemoiProf *mp, void *input) {
-
-    float *new_float;
-    double *new_double;
-    int *new_int;
-
-//    switch (mp_get_input_type(mp)) {
-//
-//        case FLOAT:
-//            new_float = malloc(sizeof *new_float);
-//            *new_float = *((float *) input);
-//            return new_float;
-//
-//        case DOUBLE:
-//            new_double = malloc(sizeof *new_double);\
-//            *new_double = *((double *) input);
-//            return new_double;
-//
-//        case INT:
-//            new_int = malloc(sizeof *new_int);\
-//            *new_int = *((int *) input);
-//            return new_int;
-//    }
-    return NULL;
-}
-
 
 cJSON *make_json_header(const MemoiProf *mp) {
 
@@ -163,7 +126,7 @@ void mp_concat_key(va_list ap, char *key, CType type) {
     void *value = va_arg(ap, void *);
     uint64_t bits = mp_get_bits(value, type);
 
-    debug_print("bits: %lx\n", bits);
+    ZF_LOGD("bits: 0x%016lx", bits);
 
     char str[17];
     snprintf(str, 17, "%016lx", bits);
@@ -181,8 +144,8 @@ const char *mp_type_to_string(CType type) {
             return "double";
         case INT:
             return "int";
+        default:
+            return "";
     }
-
-    return "";
 }
 

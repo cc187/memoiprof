@@ -20,7 +20,7 @@ void mp_print(MemoiProf *mp);
 
 void mp_to_json(MemoiProf *mp, const char *filename);
 
-void mp_add_call_sites(MemoiProf *mp, unsigned int count, ...);
+void mp_set_call_sites(MemoiProf *mp, unsigned int count, ...);
 
 // getters
 

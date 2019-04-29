@@ -1,3 +1,6 @@
+# logger options
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -DZF_LOG_DEF_TAG=\\\"memoiprof\\\"")
+
 # SOURCES
 set(MP_SRC
         MemoiProfiler.c
@@ -10,6 +13,7 @@ set(MP_RUN_SRC
 
 # LOAD SUBDIRECTORIES
 add_subdirectory(cJSON)
+add_subdirectory(zf_log)
 
 # BUILD LIBRARY
 if (SHARED)
@@ -21,7 +25,7 @@ endif ()
 target_include_directories(mp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # LINK LIBRARIES FOR LIBRARY
-target_link_libraries(mp cJSON)
+target_link_libraries(mp cJSON zf_log)
 include_directories(${GTK2_INCLUDE_DIRS})
 target_link_libraries(mp ${GTK2_LIBRARIES})
 

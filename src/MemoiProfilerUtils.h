@@ -11,14 +11,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define DEBUG 0
-
-#define debug_print(fmt, ...) \
-        do { if (DEBUG) fprintf(stderr, "%s:%d:%s(): " fmt, __FILE__, \
-                                __LINE__, __func__, __VA_ARGS__); } while (0)
-
-void *mp_dup_input(MemoiProf *mp, void *input);
-
 uint64_t mp_get_bits(void *value, CType type);
 
 unsigned int memoi_float_hash(const void *key);
