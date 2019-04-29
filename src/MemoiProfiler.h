@@ -10,38 +10,43 @@
 struct mp_t;
 typedef struct mp_t MemoiProf;
 
-MemoiProf *mp_init(const char *func_sig, const char *id, CType type);
+MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsigned int input_count, ...);
 
 MemoiProf *mp_destroy(MemoiProf *mp);
 
-void mp_inc(MemoiProf *mp, void *input, void *output);
+void mp_inc(MemoiProf *mp, void *output, ...);
 
 void mp_print(MemoiProf *mp);
 
 void mp_to_json(MemoiProf *mp, const char *filename);
 
-void mp_add_call_sites(MemoiProf* mp, unsigned int count, ...);
+void mp_add_call_sites(MemoiProf *mp, unsigned int count, ...);
 
 // getters
 
-CType mp_get_input_type(const MemoiProf* mp);
+const char *mp_get_output_type_str(const MemoiProf *mp);
 
-const char* mp_get_id(const MemoiProf *mp);
+CType *mp_get_input_type(const MemoiProf *mp);
 
-const char* mp_get_func_sig(const MemoiProf *mp);
+const char *mp_get_id(const MemoiProf *mp);
 
-unsigned int mp_get_table_size(const MemoiProf* mp);
+const char *mp_get_func_sig(const MemoiProf *mp);
 
-unsigned int mp_get_calls(const MemoiProf* mp);
+unsigned int mp_get_table_size(const MemoiProf *mp);
 
-unsigned int mp_get_hits(const MemoiProf* mp);
+unsigned int mp_get_calls(const MemoiProf *mp);
 
-unsigned int mp_get_misses(const MemoiProf* mp);
+unsigned int mp_get_hits(const MemoiProf *mp);
 
-unsigned int mp_get_call_site_count(const MemoiProf* mp);
+unsigned int mp_get_misses(const MemoiProf *mp);
 
-const char** mp_get_call_sites(const MemoiProf* mp);
+unsigned int mp_get_call_site_count(const MemoiProf *mp);
 
+const char **mp_get_call_sites(const MemoiProf *mp);
+
+unsigned int mp_get_input_count(const MemoiProf *mp);
+
+CType *mp_get_input_types(const MemoiProf *mp);
 
 #endif // MEMOIPROF_MEMOIPROFILER_H
 

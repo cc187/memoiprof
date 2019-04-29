@@ -22,12 +22,12 @@ typedef struct mr_t MemoiRec;
 /**
  *      Allocates a new MemoiRec.
  *
- * @param input The bits of the original input
+ * @param input The concatenated string of the inputs
  * @param counter The initial counter value
  * @param output The bits of the original output
  * @return A pointer to the newly allocated MemoiRec
  */
-MemoiRec *mr_init(uint64_t input, unsigned int counter, uint64_t output);
+MemoiRec *mr_init(char* input, unsigned int counter, uint64_t output);
 
 
 /**
@@ -43,7 +43,7 @@ void mr_inc_counter(MemoiRec *mr);
  * @return NULL
  */
 MemoiRec *mr_destroy(MemoiRec *mr);
-
+void mr_public_destroy(void* mr);
 
 /**
  *      Pretty prints the contents of a MemoiRec.
@@ -68,8 +68,8 @@ void mr_make_json(void *key, void *mr, void *user_data);
  *
  * @param key The key
  * @param mr The record
- * @param input_type The C type of the input
+ * @param output_type The C type of the input
  */
-void mr_print(void *key, void *mr, void *input_type);
+void mr_print(void *key, void *mr, void *output_type);
 
 #endif //MEMOIPROF_MEMOIRECORD_H

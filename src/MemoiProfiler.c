@@ -21,7 +21,9 @@ struct mp_t {
     char *func_sig;
 
     CType output_type;
-    CType input_type;
+    CType *input_types;
+    unsigned int input_count;
+    unsigned int max_key_size;
 
     GHashTable *table;
 
@@ -29,11 +31,13 @@ struct mp_t {
     unsigned int hits;
 
     unsigned int call_site_count;
-    const char** call_sites;
+    const char **call_sites;
 };
 
+MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsigned int input_count, ...) {
 
-MemoiProf *mp_init(const char *func_sig, const char *id, CType type) {
+    va_list ap;
+    va_start(ap, input_count);
 
     MemoiProf *mp = malloc(sizeof *mp);
 
@@ -45,26 +49,28 @@ MemoiProf *mp_init(const char *func_sig, const char *id, CType type) {
     mp->id = calloc(id_size, sizeof *(mp->id));
     strcpy(mp->id, id);
 
-    mp->input_type = type;
-    mp->output_type = type;
+    mp->output_type = output_type;
+
+    mp->input_count = input_count;
+
+
+    const unsigned int key_sizes = 16 * input_count;
+    const unsigned int sep_sizes = input_count - 1;
+    mp->max_key_size = key_sizes + sep_sizes + 1; // + 1 is for the null terminating character
+
+    mp->input_types = calloc(input_count, sizeof *(mp->input_types));
+    for (unsigned int i = 0; i < input_count; ++i) {
+        mp->input_types[i] = va_arg(ap, CType);
+    }
 
     mp->calls = 0;
     mp->hits = 0;
 
     mp->call_site_count = 0;
 
-    switch (type) {
+    mp->table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
-        case FLOAT:
-            mp->table = g_hash_table_new_full(memoi_float_hash, memoi_float_equal, g_free, g_free);
-            break;
-        case DOUBLE:
-            mp->table = g_hash_table_new_full(g_double_hash, g_double_equal, g_free, g_free);
-            break;
-        case INT:
-            mp->table = g_hash_table_new_full(g_int_hash, g_int_equal, g_free, g_free);
-            break;
-    }
+    va_end(ap);
 
     return mp;
 }
@@ -74,6 +80,7 @@ MemoiProf *mp_destroy(MemoiProf *mp) {
 
     if (mp != NULL) {
 
+        free(mp->input_types);
         free(mp->id);
         free(mp->func_sig);
         g_hash_table_destroy(mp->table);
@@ -84,12 +91,24 @@ MemoiProf *mp_destroy(MemoiProf *mp) {
     return NULL;
 }
 
+void mp_inc(MemoiProf *mp, void *output, ...) {
 
-void mp_inc(MemoiProf *mp, void *input, void *output) {
+    va_list ap;
+    va_start(ap, output);
 
     mp->calls++;
 
-    void *mr = g_hash_table_lookup(mp->table, input);
+    char *key = calloc(mp->max_key_size, sizeof(char));
+
+    mp_concat_key(ap, key, mp->input_types[0]); // concat the first key
+    for (unsigned int i = 1; i < mp->input_count; ++i) {
+
+        // concat every other key separated by #
+        strcat(key, "#");
+        mp_concat_key(ap, key, mp->input_types[i]);
+    }
+
+    void *mr = g_hash_table_lookup(mp->table, key);
 
     if (mr != NULL) {
 
@@ -97,24 +116,28 @@ void mp_inc(MemoiProf *mp, void *input, void *output) {
         mr_inc_counter(mr);
     } else {
 
-        uint64_t input_bits = mp_get_bits(mp, input);
-        uint64_t output_bits = mp_get_bits(mp, output);
-        MemoiRec *new_mr = mr_init(input_bits, 1, output_bits);
+        char *new_key = strdup(key); // this key will be freed when the table is destroyed
 
-        void *key = mp_dup_input(mp, input);
-        g_hash_table_insert(mp->table, key, new_mr);
+        uint64_t output_bits = mp_get_bits(output, mp->output_type);
+        MemoiRec *new_mr = mr_init(new_key, 1, output_bits);
+
+        g_hash_table_insert(mp->table, new_key, new_mr);
     }
-}
 
+    free(key);
+
+    va_end(ap);
+}
 
 void mp_print(MemoiProf *mp) {
 
     printf("==================================================\n");
-    printf("Table '%s', function '%s', %u elements, %u calls (%uh, %um)\n\n", mp->id, mp->func_sig, g_hash_table_size(mp->table), mp->calls,
+    printf("Table '%s', function '%s', %u elements, %u calls (%uh, %um)\n\n", mp->id, mp->func_sig,
+           g_hash_table_size(mp->table), mp->calls,
            mp->hits, mp->calls - mp->hits);
 
 
-    g_hash_table_foreach(mp->table, mr_print, &(mp->input_type));
+    g_hash_table_foreach(mp->table, mr_print, &(mp->output_type));
 
     printf("==================================================\n");
 }
@@ -149,9 +172,14 @@ void mp_add_call_sites(MemoiProf *mp, unsigned int count, ...) {
     va_end(ap);
 }
 
+const char *mp_get_output_type_str(const MemoiProf *mp) {
 
-CType mp_get_input_type(const MemoiProf *mp) {
-    return mp->input_type;
+    return mp_type_to_string(mp->output_type);
+
+}
+
+CType *mp_get_input_type(const MemoiProf *mp) {
+    return mp->input_types;
 }
 
 
@@ -183,11 +211,20 @@ unsigned int mp_get_misses(const MemoiProf *mp) {
     return mp->calls - mp->hits;
 }
 
-unsigned int mp_get_call_site_count(const MemoiProf* mp) {
+unsigned int mp_get_call_site_count(const MemoiProf *mp) {
     return mp->call_site_count;
 }
 
-const char** mp_get_call_sites(const MemoiProf* mp) {
+const char **mp_get_call_sites(const MemoiProf *mp) {
 
     return mp->call_sites;
+}
+
+unsigned int mp_get_input_count(const MemoiProf *mp) {
+    return mp->input_count;
+}
+
+CType *mp_get_input_types(const MemoiProf *mp) {
+
+    return mp->input_types;
 }

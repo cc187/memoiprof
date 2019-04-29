@@ -1,13 +1,49 @@
-#include <stdio.h>
+
 
 #include "MemoiProfiler.h"
 #include "cJSON.h"
 
+#include <glib.h>
+#include <stdio.h>
+#include <math.h>
+
+void profiler_test();
+
+void hash_table_test();
+
 int main() {
 
-    printf("-= Memoization Profiler Test =-\n");
+//    hash_table_test();
 
-    MemoiProf *mp = mp_init("log", "test", FLOAT);
+    profiler_test();
+
+    return 0;
+}
+
+void hash_table_test() {
+
+    GHashTable *table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+
+    char *str = "hello";
+    char *key = strdup(str);
+
+    printf("start: %s\n", key);
+
+    g_hash_table_insert(table, key, "world");
+    printf("after 1st insert: %s\n", key);
+
+    g_hash_table_insert(table, key, "world");
+    printf("after 2nd insert: %s\n", key);
+
+    g_hash_table_destroy(table);
+
+    printf("end: %s\n", key);
+}
+
+void profiler_test() {
+    printf("-= Memoization Profiler Test =-\n");
+    /*
+    MemoiProf *mp = mp_init("log", "test", FLOAT, 1, FLOAT);
 
     float i1 = 3.14f;
     float o1 = 345.127f;
@@ -42,8 +78,8 @@ int main() {
 
     mp_print(mp);
 
-    /*  */
-    MemoiProf *mi2 = mp_init("log", "tested", DOUBLE);
+
+    MemoiProf *mi2 = mp_init("log", "tested", DOUBLE, 1, DOUBLE);
 
     double i12 = 3.14;
     double o12 = 345.127;
@@ -56,8 +92,25 @@ int main() {
     mp_to_json(mp, "mp.json");
     mp_to_json(mi2, "mi2.json");
 
+
+    /**/
+    MemoiProf *mp_pow = mp_init("pow(double,double)", "2 args", DOUBLE, 2, DOUBLE, FLOAT);
+    mp_add_call_sites(mp_pow, 1, "global");
+
+    double base = 2.0;
+    float power = 8.0f;
+    double output = pow(base, power);
+
+    mp_inc(mp_pow, &output, &base, &power);
+
+    mp_print(mp_pow);
+
+    mp_to_json(mp_pow, "mp_pow.json");
+
+    mp_pow = mp_destroy(mp_pow);
+
+    /*
     mi2 = mp_destroy(mi2);
     mp = mp_destroy(mp);
-
-    return 0;
+     /**/
 }
