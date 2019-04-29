@@ -48,7 +48,7 @@ cJSON * make_json_header(const MemoiProf *mp) {
 
     /* table information */
     cJSON_AddStringToObject(json_root, "id", mp_get_id(mp));
-    cJSON_AddStringToObject(json_root, "func_name", mp_get_func_name(mp));
+    cJSON_AddStringToObject(json_root, "func_name", mp_get_func_sig(mp));
     cJSON_AddNumberToObject(json_root, "elements", mp_get_table_size(mp));
     cJSON_AddNumberToObject(json_root, "calls", mp_get_calls(mp));
     cJSON_AddNumberToObject(json_root, "hits", mp_get_hits(mp));

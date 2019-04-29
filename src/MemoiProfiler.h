@@ -10,7 +10,7 @@
 struct mp_t;
 typedef struct mp_t MemoiProf;
 
-MemoiProf *mp_init(const char *func_name, const char *id, CType type);
+MemoiProf *mp_init(const char *func_sig, const char *id, CType type);
 
 MemoiProf *mp_destroy(MemoiProf *mp);
 
@@ -28,7 +28,7 @@ CType mp_get_input_type(const MemoiProf* mp);
 
 const char* mp_get_id(const MemoiProf *mp);
 
-const char* mp_get_func_name(const MemoiProf *mp);
+const char* mp_get_func_sig(const MemoiProf *mp);
 
 unsigned int mp_get_table_size(const MemoiProf* mp);
 

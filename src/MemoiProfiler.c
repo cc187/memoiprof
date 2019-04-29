@@ -18,7 +18,7 @@
 struct mp_t {
 
     char *id;
-    char *func_name;
+    char *func_sig;
 
     CType output_type;
     CType input_type;
@@ -33,13 +33,13 @@ struct mp_t {
 };
 
 
-MemoiProf *mp_init(const char *func_name, const char *id, CType type) {
+MemoiProf *mp_init(const char *func_sig, const char *id, CType type) {
 
     MemoiProf *mp = malloc(sizeof *mp);
 
-    size_t name_size = strlen(func_name) + 1;
-    mp->func_name = calloc(name_size, sizeof *(mp->func_name));
-    strcpy(mp->func_name, func_name);
+    size_t name_size = strlen(func_sig) + 1;
+    mp->func_sig = calloc(name_size, sizeof *(mp->func_sig));
+    strcpy(mp->func_sig, func_sig);
 
     size_t id_size = strlen(id) + 1;
     mp->id = calloc(id_size, sizeof *(mp->id));
@@ -75,7 +75,7 @@ MemoiProf *mp_destroy(MemoiProf *mp) {
     if (mp != NULL) {
 
         free(mp->id);
-        free(mp->func_name);
+        free(mp->func_sig);
         g_hash_table_destroy(mp->table);
         free(mp->call_sites);
         free(mp);
@@ -110,7 +110,7 @@ void mp_inc(MemoiProf *mp, void *input, void *output) {
 void mp_print(MemoiProf *mp) {
 
     printf("==================================================\n");
-    printf("Table '%s', function '%s', %u elements, %u calls (%uh, %um)\n\n", mp->id, mp->func_name, g_hash_table_size(mp->table), mp->calls,
+    printf("Table '%s', function '%s', %u elements, %u calls (%uh, %um)\n\n", mp->id, mp->func_sig, g_hash_table_size(mp->table), mp->calls,
            mp->hits, mp->calls - mp->hits);
 
 
@@ -160,8 +160,8 @@ const char *mp_get_id(const MemoiProf *mp) {
 }
 
 
-const char *mp_get_func_name(const MemoiProf *mp) {
-    return mp->func_name;
+const char *mp_get_func_sig(const MemoiProf *mp) {
+    return mp->func_sig;
 }
 
 
