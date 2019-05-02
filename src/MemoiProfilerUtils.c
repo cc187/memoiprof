@@ -16,12 +16,12 @@ cJSON *make_json_header(const MemoiProf *mp) {
 
     /* function information */
     cJSON_AddStringToObject(json_root, "id", mp_get_id(mp));
-    cJSON_AddStringToObject(json_root, "func_sig", mp_get_func_sig(mp));
-    cJSON_AddStringToObject(json_root, "output_type", mp_get_output_type_str(mp));
-    cJSON_AddNumberToObject(json_root, "input_count", mp_get_input_count(mp));
+    cJSON_AddStringToObject(json_root, "funcSig", mp_get_func_sig(mp));
+    cJSON_AddStringToObject(json_root, "outputType", mp_get_output_type_str(mp));
+    cJSON_AddNumberToObject(json_root, "inputCount", mp_get_input_count(mp));
 
     cJSON *input_types_array = cJSON_CreateArray();
-    cJSON_AddItemToObject(json_root, "input_types", input_types_array);
+    cJSON_AddItemToObject(json_root, "inputTypes", input_types_array);
 
     unsigned int input_count = mp_get_input_count(mp);
     CType *input_types = mp_get_input_types(mp);

@@ -17,8 +17,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib CACHE PATH "Output di
 
 
 # COMPILER OPTIONS
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -pipe")
-set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pipe")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g -fsanitize=address")
 set(CMAKE_C_FLAGS_RELEASE  "-O3 -fomit-frame-pointer -march=native -Wno-strict-aliasing -DNDEBUG")
 set(CMAKE_BUILD_TYPE_INIT "Release")
 set(CMAKE_C_STANDARD 11)

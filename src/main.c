@@ -55,29 +55,29 @@ void profiler_test() {
 
     mp_set_call_sites(mp, 2, "main.c:19", "main.c:22");
 
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
-    mp_inc(mp, &i1, &o1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
+    mp_inc(mp, &o1, &i1);
 
-    mp_inc(mp, &i2, &o2);
-    mp_inc(mp, &i2, &o2);
-    mp_inc(mp, &i2, &o2);
-    mp_inc(mp, &i2, &o2);
+    mp_inc(mp, &o2, &i2);
+    mp_inc(mp, &o2, &i2);
+    mp_inc(mp, &o2, &i2);
+    mp_inc(mp, &o2, &i2);
 
     mp_print(mp);
 
@@ -90,20 +90,20 @@ void profiler_test() {
     double i12 = 3.14;
     double o12 = 345.127;
 
-    mp_inc(mi2, &i12, &o12);
-    mp_inc(mi2, &i12, &o12);
-    mp_inc(mi2, &i12, &o12);
-    mp_inc(mi2, &i12, &o12);
+    mp_inc(mi2, &o12, &i12);
+    mp_inc(mi2, &o12, &i12);
+    mp_inc(mi2, &o12, &i12);
+    mp_inc(mi2, &o12, &i12);
 
     mp_to_json(mi2, "mi2.json");
     mi2 = mp_destroy(mi2);
 
 
-    MemoiProf *mp_pow = mp_init("pow(double,double)", "2 args", DOUBLE, 2, DOUBLE, FLOAT);
+    MemoiProf *mp_pow = mp_init("pow(double,double)", "2 args", DOUBLE, 2, DOUBLE, DOUBLE);
     mp_set_call_sites(mp_pow, 1, "global");
 
     double base = 2.0;
-    float power = 8.0f;
+    double power = 8.0;
     double output = pow(base, power);
 
     mp_inc(mp_pow, &output, &base, &power);
@@ -112,4 +112,5 @@ void profiler_test() {
 
     mp_to_json(mp_pow, "mp_pow.json");
 
-    mp_pow = mp_destroy(mp_pow);}
+    mp_pow = mp_destroy(mp_pow);
+}
