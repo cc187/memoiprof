@@ -79,7 +79,9 @@ void mr_make_json(void *key, void *mr, void *json_array) {
 
     cJSON_AddNumberToObject(count, "counter", counter);
 
-    cJSON_AddItemToArray(json_array, count);
+//    cJSON_AddItemToArray(json_array, count);
+
+    cJSON_InsertItemInArray(json_array, 0, count);
 }
 #pragma GCC diagnostic pop
 

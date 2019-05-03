@@ -106,7 +106,16 @@ void profiler_test() {
     double power = 8.0;
     double output = pow(base, power);
 
-    mp_inc(mp_pow, &output, &base, &power);
+
+    srand(time(NULL));   // Initialization, should only be called once.
+
+    for (int i = 0; i < 100000; ++i) {
+
+        const double b = i * 54 + output;
+        double o = pow(b, rand()%10);
+        mp_inc(mp_pow, &o, &b, &i);
+    }
+    
 
     mp_print(mp_pow);
 

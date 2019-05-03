@@ -27,6 +27,7 @@ cJSON *make_json_header(const MemoiProf *mp) {
     CType *input_types = mp_get_input_types(mp);
     for (unsigned int i = 0; i < input_count; ++i) {
 
+        // NEEDS TO BE IN ORDER
         cJSON_AddItemToArray(
                 input_types_array,
                 cJSON_CreateString(
@@ -51,7 +52,8 @@ cJSON *make_json_header(const MemoiProf *mp) {
     const char **call_sites = mp_get_call_sites(mp);
     for (unsigned int i = 0; i < call_site_count; ++i) {
 
-        cJSON_AddItemToArray(call_sites_array, cJSON_CreateString(call_sites[i]));
+        cJSON_InsertItemInArray(call_sites_array, 0, cJSON_CreateString(call_sites[i]));
+//        cJSON_AddItemToArray(call_sites_array, cJSON_CreateString(call_sites[i]));
     }
 
     return json_root;
@@ -60,6 +62,8 @@ cJSON *make_json_header(const MemoiProf *mp) {
 
 void write_json_and_cleanup(const char *filename, cJSON *json_root) {
 
+    ZF_LOGI("writing report '%s'", filename);
+
     FILE *f = fopen(filename, "w");
     if (f == NULL) {
 
@@ -67,8 +71,13 @@ void write_json_and_cleanup(const char *filename, cJSON *json_root) {
         return;
     }
 
-    char *output = cJSON_Print(json_root);
-    fprintf(f, "%s", output);
+//    char *output = cJSON_Print(json_root);
+    char *output = cJSON_PrintBuffered(json_root, 50 * 1024 * 1024, 0);
+//    fprintf(f, "%s", output);
+    int res = fputs(output, f);
+    if (res == EOF) {
+        ZF_LOGI("writing of report '%s' failed", filename);
+    }
 
     free(output);
     cJSON_Delete(json_root);
@@ -126,7 +135,7 @@ void mp_concat_key(va_list ap, char *key, CType type) {
     void *value = va_arg(ap, void *);
     uint64_t bits = mp_get_bits(value, type);
 
-    ZF_LOGD("bits: 0x%016lx", bits);
+//    ZF_LOGD("bits: 0x%016lx", bits);
 
     char str[17];
     snprintf(str, 17, "%016lx", bits);
