@@ -62,8 +62,6 @@ cJSON *make_json_header(const MemoiProf *mp) {
 
 void write_json_and_cleanup(const char *filename, cJSON *json_root) {
 
-    ZF_LOGI("writing report '%s'", filename);
-
     FILE *f = fopen(filename, "w");
     if (f == NULL) {
 
