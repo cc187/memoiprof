@@ -112,8 +112,9 @@ void profiler_test() {
     for (int i = 0; i < 100000; ++i) {
 
         const double b = i * 54 + output;
-        double o = pow(b, rand()%10);
-        mp_inc(mp_pow, &o, &b, &i);
+        const double e = rand() % 10;
+        double o = pow(b, e);
+        mp_inc(mp_pow, &o, &b, &e);
     }
     
 
