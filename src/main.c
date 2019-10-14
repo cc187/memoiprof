@@ -101,6 +101,7 @@ void profiler_test() {
 
     MemoiProf *mp_pow = mp_init("pow(double,double)", "2 args", DOUBLE, 2, DOUBLE, DOUBLE);
     mp_set_call_sites(mp_pow, 1, "global");
+    mp_set_sampling(mp_pow, 10000);
 
     double base = 2.0;
     double power = 8.0;
@@ -118,7 +119,7 @@ void profiler_test() {
     }
     
 
-    mp_print(mp_pow);
+//    mp_print(mp_pow);
 
     mp_to_json(mp_pow, "mp_pow.json");
 

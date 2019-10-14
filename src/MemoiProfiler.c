@@ -33,6 +33,9 @@ struct mp_t {
 
     unsigned int call_site_count;
     const char **call_sites;
+
+    unsigned int sampling;
+    unsigned int current_sample;
 };
 
 MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsigned int input_count, ...) {
@@ -74,6 +77,8 @@ MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsi
 
     mp->table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
+    mp_set_sampling(mp, 1u);
+
     va_end(ap);
 
     return mp;
@@ -96,6 +101,13 @@ MemoiProf *mp_destroy(MemoiProf *mp) {
 }
 
 void mp_inc(MemoiProf *mp, void *output, ...) {
+
+    if (mp->current_sample > 0) {
+        mp->current_sample = mp->current_sample - 1;
+        return;
+    } else {
+        mp->current_sample = mp->sampling;
+    }
 
     va_list ap;
     va_start(ap, output);
@@ -231,4 +243,21 @@ unsigned int mp_get_input_count(const MemoiProf *mp) {
 CType *mp_get_input_types(const MemoiProf *mp) {
 
     return mp->input_types;
+}
+
+/**
+ * Sets the sampling rate. If you want to sample 1/x of the calls, sampling needs to be x. The value of sampling should
+ * be >= 1, meaning that every call is accounted for.
+ *
+ * @param mp the MemoiProf instance
+ * @param sampling x, where the sampling rate is 1/x
+ */
+void mp_set_sampling(MemoiProf *mp, int sampling) {
+
+    if (sampling <= 0) {
+        sampling = 1;
+    }
+
+    mp->sampling = sampling - 1;
+    mp->current_sample = 0u;
 }

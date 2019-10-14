@@ -22,6 +22,8 @@ void mp_to_json(MemoiProf *mp, const char *filename);
 
 void mp_set_call_sites(MemoiProf *mp, unsigned int count, ...);
 
+void mp_set_sampling(MemoiProf *mp, int sampling);
+
 // getters
 
 const char *mp_get_output_type_str(const MemoiProf *mp);
