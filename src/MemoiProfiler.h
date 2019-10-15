@@ -24,6 +24,8 @@ void mp_set_call_sites(MemoiProf *mp, unsigned int count, ...);
 
 void mp_set_sampling(MemoiProf *mp, int sampling);
 
+void mp_set_periodic_reporting(MemoiProf *mp, char is_periodic, int period, char *periodic_filename);
+
 // getters
 
 const char *mp_get_output_type_str(const MemoiProf *mp);

@@ -36,7 +36,14 @@ struct mp_t {
 
     unsigned int sampling;
     unsigned int current_sample;
+
+    // periodic reporting configuration
+    char is_periodic;
+    unsigned int period;
+    char *periodic_filename;
+    unsigned int periodic_part;
 };
+
 
 MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsigned int input_count, ...) {
 
@@ -79,9 +86,42 @@ MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsi
 
     mp_set_sampling(mp, 1u);
 
+    mp_set_periodic_reporting(mp, 0, 1, NULL);
+
     va_end(ap);
 
     return mp;
+}
+
+/**
+ *  Controls the option to  periodically generate a partial report and write it to a partial file, whose name is based
+ *  on the provided name. Whenever a partial report is generated and written, the internal table is reset and all
+ *  profiling data is lost.
+ *
+ * @param mp
+ * @param is_periodic
+ * @param period The number of calls between writes of periodic reports. This number should be > 0. If it is <= 0,
+ * periodic reporting will be disabled.
+ * @param periodic_filename The name of split file where the results will be saved. This string will be duplicated and
+ * stored, so you are responsible for its memory management.
+ */
+void mp_set_periodic_reporting(MemoiProf *mp, char is_periodic, int period, char *periodic_filename) {
+
+    // periodic reporting is disabled if period <= 0
+    if (period <= 0 || is_periodic == 0) {
+
+        mp->is_periodic = 0;
+        mp->period = 1;
+        mp->periodic_filename = NULL;
+
+    } else {
+
+        mp->is_periodic = 1;
+        mp->period = period;
+        mp->periodic_filename = strdup(periodic_filename);
+    }
+
+    mp->periodic_part = 0;
 }
 
 
@@ -94,20 +134,56 @@ MemoiProf *mp_destroy(MemoiProf *mp) {
         free(mp->func_sig);
         g_hash_table_destroy(mp->table);
         free(mp->call_sites);
-        free(mp);
+        free(mp->periodic_filename);
     }
+
+    free(mp);
 
     return NULL;
 }
 
+static void mp_reset(MemoiProf *mp) {
+
+    mp->calls = 0;
+    mp->hits = 0;
+
+    g_hash_table_remove_all(mp->table);
+}
+
+static void mp_periodic_report(MemoiProf *mp) {
+
+    if (mp->is_periodic) {
+        if (mp->calls >= mp->period) {
+
+            // generate partial report
+            mp->periodic_part = mp->periodic_part + 1;
+
+            // 5 is for the part extension, 4 is to account for digits up to 9999, 1 is for the \0 terminating character
+            unsigned int periodic_filename_size = strlen(mp->periodic_filename) + 5 + 4 + 1;
+            char *periodic_filename = calloc(periodic_filename_size, sizeof *periodic_filename);
+            snprintf(periodic_filename, periodic_filename_size, "%s.part%d", mp->periodic_filename, mp->periodic_part);
+
+            mp_to_json(mp, periodic_filename);
+            free(periodic_filename);
+
+            // reset mp
+            mp_reset(mp);
+        }
+    }
+}
+
 void mp_inc(MemoiProf *mp, void *output, ...) {
 
+    // sampling test and skip
     if (mp->current_sample > 0) {
         mp->current_sample = mp->current_sample - 1;
         return;
     } else {
         mp->current_sample = mp->sampling;
     }
+
+    // periodic test
+    mp_periodic_report(mp);
 
     va_list ap;
     va_start(ap, output);
