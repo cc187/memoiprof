@@ -118,11 +118,27 @@ void profiler_test() {
         double o = pow(b, e);
         mp_inc(mp_pow, &o, &b, &e);
     }
-    
-
 //    mp_print(mp_pow);
-
     mp_to_json(mp_pow, "mp_pow.json");
+
+
+    MemoiProf *mp_numbers = mp_init("cos(double)", "numbers", DOUBLE, 1, DOUBLE);
+//    mp_set_periodic_reporting(mp_numbers, 1, 10, "mp_numbers.json");
+
+    int keys[] = {15, 8, 14, 7, 7, 12, 3, 12, 22, 10, 18, 14, 25, 18, 26, 24, 29, 23, 20, 13, 1, 5, 3, 9, 21, 14, 29,
+                  26, 24, 20, 15, 13, 10, 2, 28, 27, 22, 20, 23, 16, 21, 7, 20, 25, 15, 1, 15, 10, 21, 5, 4, 14, 6, 28,
+                  21, 9, 29, 27, 22, 20, 28, 9, 29, 27, 17, 14, 9, 19, 18, 24, 26, 7, 6, 25, 10, 2, 6, 5, 29, 5, 1, 17,
+                  29, 22, 19, 6, 5, 11, 24, 6, 1, 20, 13, 27, 15, 2, 5, 14, 25, 8};
+
+    for (int index = 0; index < 100; ++index) {
+
+        double input = keys[index];
+        double output = cos(input);
+        mp_inc(mp_numbers, &output, &input);
+    }
+
+    mp_to_json(mp_numbers, "mp_numbers.complete.json");
+
 
     mp_pow = mp_destroy(mp_pow);
 }
