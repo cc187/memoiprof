@@ -18,6 +18,8 @@
 struct mr_t;
 typedef struct mr_t MemoiRec;
 
+struct ji_t;
+typedef struct ji_t json_info;
 
 /**
  *      Allocates a new MemoiRec.
@@ -71,5 +73,8 @@ void mr_make_json(void *key, void *mr, void *user_data);
  * @param output_type The C type of the input
  */
 void mr_print(void *key, void *mr, void *output_type);
+
+json_info* ji_init(char opt, void* json_array);
+json_info* ji_destroy(json_info* ji);
 
 #endif //MEMOIPROF_MEMOIRECORD_H

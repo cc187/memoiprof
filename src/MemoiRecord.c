@@ -8,6 +8,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+struct ji_t {
+    cJSON * json_array;
+    char remove_low_counts;
+};
 
 struct mr_t {
 
@@ -15,6 +19,26 @@ struct mr_t {
     unsigned int counter;
     uint64_t output;
 };
+
+json_info* ji_init(char opt, void* json_array) {
+
+    json_info* ji = malloc(sizeof(*ji));
+
+    ji->remove_low_counts = opt;
+    ji->json_array = json_array;
+
+    return ji;
+}
+
+json_info* ji_destroy(json_info* ji) {
+
+    if(ji != NULL){
+
+        free(ji);
+    }
+
+    return NULL;
+}
 
 MemoiRec *mr_init(char* input, unsigned int counter, uint64_t output) {
 
@@ -62,11 +86,19 @@ void mr_inc_counter(MemoiRec *mr) {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-void mr_make_json(void *key, void *mr, void *json_array) {
+void mr_make_json(void *key, void *mr, void *info) {
+
+    json_info* json_info = info;
 
     const char* input_string = ((MemoiRec *) mr)->input;
     const uint64_t output_bits = ((MemoiRec *) mr)->output;
     const unsigned int counter = ((MemoiRec *) mr)->counter;
+
+    if(json_info->remove_low_counts){
+        if(counter == 1) {
+            return;
+        }
+    }
 
     struct cJSON *count = cJSON_CreateObject();
 
@@ -81,7 +113,7 @@ void mr_make_json(void *key, void *mr, void *json_array) {
 
 //    cJSON_AddItemToArray(json_array, count);
 
-    cJSON_InsertItemInArray(json_array, 0, count);
+    cJSON_InsertItemInArray(json_info->json_array, 0, count);
 }
 #pragma GCC diagnostic pop
 

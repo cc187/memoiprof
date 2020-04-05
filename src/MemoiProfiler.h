@@ -26,6 +26,8 @@ void mp_set_sampling(MemoiProf *mp, int sampling);
 
 void mp_set_periodic_reporting(MemoiProf *mp, char is_periodic, int period, char *periodic_filename);
 
+void mp_set_remove_low_counts(MemoiProf *mp, char remove_low_counts);
+
 // getters
 
 const char *mp_get_output_type_str(const MemoiProf *mp);
@@ -51,6 +53,8 @@ const char **mp_get_call_sites(const MemoiProf *mp);
 unsigned int mp_get_input_count(const MemoiProf *mp);
 
 CType *mp_get_input_types(const MemoiProf *mp);
+
+char mp_get_remove_low_counts(MemoiProf *mp);
 
 #endif // MEMOIPROF_MEMOIPROFILER_H
 

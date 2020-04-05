@@ -34,6 +34,7 @@ struct mp_t {
     unsigned int call_site_count;
     const char **call_sites;
 
+    // sampling configuration
     unsigned int sampling;
     unsigned int current_sample;
 
@@ -42,8 +43,10 @@ struct mp_t {
     unsigned int period;
     char *periodic_filename;
     unsigned int periodic_part;
-};
 
+    // optimization configuration
+    char remove_low_counts;
+};
 
 MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsigned int input_count, ...) {
 
@@ -88,6 +91,8 @@ MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsi
 
     mp_set_periodic_reporting(mp, 0, 1, NULL);
 
+    mp_set_remove_low_counts(mp, 0);
+
     va_end(ap);
 
     return mp;
@@ -124,6 +129,21 @@ void mp_set_periodic_reporting(MemoiProf *mp, char is_periodic, int period, char
     mp->periodic_part = 0;
 }
 
+/**
+ * Controls whether low count entries (count == 1) are removed when printing the JSON file.
+ *
+ * @param mp
+ * @param remove_low_counts
+ */
+void mp_set_remove_low_counts(MemoiProf *mp, char remove_low_counts) {
+
+    mp->remove_low_counts = remove_low_counts;
+}
+
+char mp_get_remove_low_counts(MemoiProf *mp) {
+
+    return mp->remove_low_counts;
+}
 
 MemoiProf *mp_destroy(MemoiProf *mp) {
 
@@ -242,7 +262,9 @@ void mp_to_json(MemoiProf *mp, const char *filename) {
     /* counts array */
     cJSON *json_array = cJSON_CreateArray();
     cJSON_AddItemToObject(json_root, "counts", json_array);
-    g_hash_table_foreach(mp->table, mr_make_json, json_array);
+    json_info* info = ji_init(mp_get_remove_low_counts(mp), json_array);
+    g_hash_table_foreach(mp->table, mr_make_json, info);
+    info = ji_destroy(info);
 
     write_json_and_cleanup(filename, json_root);
 }
