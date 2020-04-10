@@ -10,11 +10,17 @@
 struct mp_t;
 typedef struct mp_t MemoiProf;
 
-MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsigned int input_count, ...);
+MemoiProf *mp_init(const char *func_sig, const char *id, unsigned int input_count, unsigned int output_count, ...);
 
 MemoiProf *mp_destroy(MemoiProf *mp);
 
-void mp_inc(MemoiProf *mp, void *output, ...);
+
+/**
+ *
+ * @param mp
+ * @param ... First the inputs, then the outputs
+ */
+void mp_inc(MemoiProf *mp, ...);
 
 void mp_print(MemoiProf *mp);
 
@@ -29,8 +35,6 @@ void mp_set_periodic_reporting(MemoiProf *mp, char is_periodic, int period, char
 void mp_set_remove_low_counts(MemoiProf *mp, char remove_low_counts);
 
 // getters
-
-const char *mp_get_output_type_str(const MemoiProf *mp);
 
 CType *mp_get_input_type(const MemoiProf *mp);
 
@@ -52,7 +56,11 @@ const char **mp_get_call_sites(const MemoiProf *mp);
 
 unsigned int mp_get_input_count(const MemoiProf *mp);
 
+unsigned int mp_get_output_count(const MemoiProf *mp);
+
 CType *mp_get_input_types(const MemoiProf *mp);
+
+CType *mp_get_output_types(const MemoiProf *mp);
 
 char mp_get_remove_low_counts(MemoiProf *mp);
 

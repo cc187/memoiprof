@@ -5,8 +5,8 @@
 #ifndef MEMOIPROF_MEMOIPROFILERUTILS_H
 #define MEMOIPROF_MEMOIPROFILERUTILS_H
 
-#include "MemoiProfiler.h"
 #include "cJSON.h"
+#include "MemoiUtils.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -19,9 +19,9 @@ int memoi_float_equal(const void *a, const void *b);
 
 void write_json_and_cleanup(const char *filename, cJSON *json_root);
 
-cJSON *make_json_header(const MemoiProf *mp);
-
 void mp_concat_key(va_list ap, char *key, CType type);
+
+void mp_concat_key_with_bits(uint64_t  bits, char *key);
 
 const char *mp_type_to_string(CType type);
 

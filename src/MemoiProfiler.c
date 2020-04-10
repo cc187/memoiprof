@@ -18,56 +18,67 @@
 
 struct mp_t {
 
+    // function config
     char *id;
     char *func_sig;
 
-    CType output_type;
+    // output config
+    CType *output_types;
+    unsigned int output_count;
+
+    // input config
     CType *input_types;
     unsigned int input_count;
     unsigned int max_key_size;
 
+    // table config
     GHashTable *table;
 
+    // stats
     unsigned int calls;
     unsigned int hits;
 
+    // call site config
     unsigned int call_site_count;
     const char **call_sites;
 
-    // sampling configuration
+    // sampling config
     unsigned int sampling;
     unsigned int current_sample;
 
-    // periodic reporting configuration
+    // periodic reporting config
     char is_periodic;
     unsigned int period;
     char *periodic_filename;
     unsigned int periodic_part;
 
-    // optimization configuration
+    // optimization config
     char remove_low_counts;
 };
 
-MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsigned int input_count, ...) {
+static cJSON *make_json_header(const MemoiProf *mp);
 
-    ZF_LOGI("initializing '%s' for '%s %s'", id, mp_type_to_string(output_type), func_sig);
+MemoiProf *mp_init(const char *func_sig, const char *id, unsigned int input_count, unsigned int output_count, ...) {
+
+    ZF_LOGI("initializing '%s' for %s", id, func_sig);
 
     va_list ap;
-    va_start(ap, input_count);
+    va_start(ap, output_count);
 
     MemoiProf *mp = malloc(sizeof *mp);
 
+    // function signature
     size_t name_size = strlen(func_sig) + 1;
     mp->func_sig = calloc(name_size, sizeof *(mp->func_sig));
     strcpy(mp->func_sig, func_sig);
 
+    // memoization id
     size_t id_size = strlen(id) + 1;
     mp->id = calloc(id_size, sizeof *(mp->id));
     strcpy(mp->id, id);
 
-    mp->output_type = output_type;
-
     mp->input_count = input_count;
+    mp->output_count = output_count;
 
 
     const unsigned int key_sizes = 16 * input_count;
@@ -77,6 +88,11 @@ MemoiProf *mp_init(const char *func_sig, const char *id, CType output_type, unsi
     mp->input_types = calloc(input_count, sizeof *(mp->input_types));
     for (unsigned int i = 0; i < input_count; ++i) {
         mp->input_types[i] = va_arg(ap, CType);
+    }
+
+    mp->output_types = calloc(output_count, sizeof *(mp->output_types));
+    for (unsigned int o = 0; o < output_count; ++o) {
+        mp->output_types[o] = va_arg(ap, CType);
     }
 
     mp->calls = 0;
@@ -150,6 +166,7 @@ MemoiProf *mp_destroy(MemoiProf *mp) {
     if (mp != NULL) {
 
         free(mp->input_types);
+        free(mp->output_types);
         free(mp->id);
         free(mp->func_sig);
         g_hash_table_destroy(mp->table);
@@ -192,7 +209,7 @@ static void mp_periodic_report(MemoiProf *mp) {
     }
 }
 
-void mp_inc(MemoiProf *mp, void *output, ...) {
+void mp_inc(MemoiProf *mp, ...) {
 
     // sampling test and skip
     if (mp->current_sample > 0) {
@@ -206,11 +223,11 @@ void mp_inc(MemoiProf *mp, void *output, ...) {
     mp_periodic_report(mp);
 
     va_list ap;
-    va_start(ap, output);
+    va_start(ap, mp);
 
     mp->calls++;
 
-    char *key = calloc(mp->max_key_size, sizeof(char));
+    char *key = calloc(mp->max_key_size, sizeof(*key));
 
     mp_concat_key(ap, key, mp->input_types[0]); // concat the first key
     for (unsigned int i = 1; i < mp->input_count; ++i) {
@@ -230,8 +247,13 @@ void mp_inc(MemoiProf *mp, void *output, ...) {
 
         char *new_key = strdup(key); // this key will be freed when the table is destroyed
 
-        uint64_t output_bits = mp_get_bits(output, mp->output_type);
-        MemoiRec *new_mr = mr_init(new_key, 1, output_bits);
+        uint64_t *output_bits = calloc(mp->output_count, sizeof *output_bits);
+        for (unsigned int o = 0; o < mp->output_count; ++o) {
+
+            output_bits[o] = mp_get_bits(va_arg(ap, void*), mp->output_types[o]);
+        }
+
+        MemoiRec *new_mr = mr_init(new_key, mp->output_count, output_bits, mp->output_types);
 
         g_hash_table_insert(mp->table, new_key, new_mr);
     }
@@ -249,7 +271,7 @@ void mp_print(MemoiProf *mp) {
            mp->hits, mp->calls - mp->hits);
 
 
-    g_hash_table_foreach(mp->table, mr_print, &(mp->output_type));
+    g_hash_table_foreach(mp->table, mr_print, &(mp->output_types[0])); // FIXME
 
     printf("==================================================\n");
 }
@@ -262,7 +284,7 @@ void mp_to_json(MemoiProf *mp, const char *filename) {
     /* counts array */
     cJSON *json_array = cJSON_CreateArray();
     cJSON_AddItemToObject(json_root, "counts", json_array);
-    json_info* info = ji_init(mp_get_remove_low_counts(mp), json_array);
+    json_info *info = ji_init(mp_get_remove_low_counts(mp), json_array);
     g_hash_table_foreach(mp->table, mr_make_json, info);
     info = ji_destroy(info);
 
@@ -284,12 +306,6 @@ void mp_set_call_sites(MemoiProf *mp, unsigned int count, ...) {
     }
 
     va_end(ap);
-}
-
-const char *mp_get_output_type_str(const MemoiProf *mp) {
-
-    return mp_type_to_string(mp->output_type);
-
 }
 
 CType *mp_get_input_type(const MemoiProf *mp) {
@@ -338,9 +354,18 @@ unsigned int mp_get_input_count(const MemoiProf *mp) {
     return mp->input_count;
 }
 
+unsigned int mp_get_output_count(const MemoiProf *mp) {
+    return mp->output_count;
+}
+
 CType *mp_get_input_types(const MemoiProf *mp) {
 
     return mp->input_types;
+}
+
+CType *mp_get_output_types(const MemoiProf *mp) {
+
+    return mp->output_types;
 }
 
 /**
@@ -358,4 +383,71 @@ void mp_set_sampling(MemoiProf *mp, int sampling) {
 
     mp->sampling = sampling - 1;
     mp->current_sample = 0u;
+}
+
+cJSON *make_json_header(const MemoiProf *mp) {
+
+    cJSON *json_root = cJSON_CreateObject();
+
+    const unsigned int input_count = mp_get_input_count(mp);
+    const unsigned int output_count = mp_get_output_count(mp);
+
+    /* function information */
+    cJSON_AddStringToObject(json_root, "id", mp_get_id(mp));
+    cJSON_AddStringToObject(json_root, "funcSig", mp_get_func_sig(mp));
+    cJSON_AddNumberToObject(json_root, "inputCount", input_count);
+    cJSON_AddNumberToObject(json_root, "outputCount", output_count);
+
+    // input information
+    cJSON *input_types_array = cJSON_CreateArray();
+    cJSON_AddItemToObject(json_root, "inputTypes", input_types_array);
+
+    CType *input_types = mp_get_input_types(mp);
+    for (unsigned int i = 0; i < input_count; ++i) {
+
+        // NEEDS TO BE IN ORDER
+        cJSON_AddItemToArray(
+                input_types_array,
+                cJSON_CreateString(
+                        mp_type_to_string(
+                                input_types[i]
+                        )
+                )
+        );
+    }
+
+    // output information
+    cJSON *output_types_array = cJSON_CreateArray();
+    cJSON_AddItemToObject(json_root, "outputTypes", output_types_array);
+
+    CType *output_types = mp_get_output_types(mp);
+    for (unsigned int o = 0; o < output_count; ++o) {
+
+        cJSON_AddItemToArray(
+                output_types_array,
+                cJSON_CreateString(
+                        mp_type_to_string(output_types[o])
+                )
+        );
+    }
+
+    /* profiling information */
+    cJSON_AddNumberToObject(json_root, "elements", mp_get_table_size(mp));
+    cJSON_AddNumberToObject(json_root, "calls", mp_get_calls(mp));
+    cJSON_AddNumberToObject(json_root, "hits", mp_get_hits(mp));
+    cJSON_AddNumberToObject(json_root, "misses", mp_get_misses(mp));
+
+    /* call site information */
+    cJSON *call_sites_array = cJSON_CreateArray();
+    cJSON_AddItemToObject(json_root, "call_sites", call_sites_array);
+
+    unsigned int call_site_count = mp_get_call_site_count(mp);
+    const char **call_sites = mp_get_call_sites(mp);
+    for (unsigned int i = 0; i < call_site_count; ++i) {
+
+        cJSON_InsertItemInArray(call_sites_array, 0, cJSON_CreateString(call_sites[i]));
+//        cJSON_AddItemToArray(call_sites_array, cJSON_CreateString(call_sites[i]));
+    }
+
+    return json_root;
 }

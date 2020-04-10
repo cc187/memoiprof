@@ -12,15 +12,73 @@ void profiler_test();
 
 void hash_table_test();
 
+void multi_out_test();
+
+float ComputeQCPU_extract(float expArg, float phi, float *o0, float *o1);
+
 int main() {
 
 //    hash_table_test();
 
-    profiler_test();
+//    profiler_test();
+
+    multi_out_test();
 
     return 0;
 }
 
+void multi_out_test() {
+
+    int keys[] = {15, 8, 14, 7, 7, 12, 3, 12, 22, 10, 18, 14, 25, 18, 26, 24, 29, 23, 20, 13, 1, 5, 3, 9, 21, 14, 29,
+                  26, 24, 20, 15, 13, 10, 2, 28, 27, 22, 20, 23, 16, 21, 7, 20, 25, 15, 1, 15, 10, 21, 5, 4, 14, 6, 28,
+                  21, 9, 29, 27, 22, 20, 28, 9, 29, 27, 17, 14, 9, 19, 18, 24, 26, 7, 6, 25, 10, 2, 6, 5, 29, 5, 1, 17,
+                  29, 22, 19, 6, 5, 11, 24, 6, 1, 20, 13, 27, 15, 2, 5, 14, 25, 8};
+
+    MemoiProf *mp_single = mp_init("cosf(float)", "multi_out", 1, 1, FLOAT, FLOAT);
+    mp_set_remove_low_counts(mp_single, 1);
+
+    for (int index = 0; index < 100; ++index) {
+
+        float input = (float) keys[index];
+        float output = cosf(input);
+        mp_inc(mp_single, &input, &output);
+    }
+    mp_to_json(mp_single, "mp_single.json");
+
+    mp_destroy(mp_single);
+
+
+    MemoiProf *mp_multi = mp_init("ComputeQCPU_extract(float,float,float*,float*)", "multi_out",
+                                  2,
+                                  2,
+                                  FLOAT, FLOAT,
+                                  FLOAT, FLOAT);
+    mp_set_remove_low_counts(mp_multi, 1);
+
+    for (int index = 0; index < 100; ++index) {
+
+        float expArg = (float) keys[index];
+        float phi = rand() % (6 + 1 - 1) + 1;
+        float o0, o1;
+        ComputeQCPU_extract(expArg, phi, &o0, &o1);
+        mp_inc(mp_multi, &expArg, &phi, &o0, &o1);
+    }
+    mp_to_json(mp_multi, "mp_multi.json");
+
+    mp_destroy(mp_multi);
+}
+
+float ComputeQCPU_extract(float expArg, float phi, float *o0, float *o1) {
+
+    float cosArg = cosf(expArg);
+    float sinArg = sinf(expArg);
+
+    // outputs
+    *o0 = cosArg * phi;
+    *o1 = sinArg * phi;
+}
+
+/*
 void hash_table_test() {
 
     GHashTable *table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
@@ -142,3 +200,4 @@ void profiler_test() {
 
     mp_pow = mp_destroy(mp_pow);
 }
+/**/
