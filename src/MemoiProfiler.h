@@ -18,6 +18,10 @@ typedef enum periodic_kind_t {
     MP_PERIODIC_OFF, MP_PERIODIC_ON
 } PeriodicKind;
 
+typedef enum culling_kind_t {
+    MP_CULLING_OFF, MP_CULLING_ON
+} CullingKind;
+
 /**
  *
  * @param func_sig
@@ -50,7 +54,7 @@ void mp_set_sampling(MemoiProf *mp, SamplingKind sampling, int sampling_rate);
 
 void mp_set_periodic_reporting(MemoiProf *mp, PeriodicKind periodic_kind, int period);
 
-void mp_set_remove_low_counts(MemoiProf *mp, char remove_low_counts);
+void mp_set_culling(MemoiProf *mp, CullingKind culling_kind);
 
 // getters
 
@@ -80,7 +84,7 @@ CType *mp_get_input_types(const MemoiProf *mp);
 
 CType *mp_get_output_types(const MemoiProf *mp);
 
-char mp_get_remove_low_counts(MemoiProf *mp);
+char mp_get_culling(MemoiProf *mp);
 
 #endif // MEMOIPROF_MEMOIPROFILER_H
 

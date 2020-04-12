@@ -20,7 +20,7 @@ int main() {
 
 //    hash_table_test();
 
-//    profiler_test();
+    profiler_test();
 
     multi_out_test();
 
@@ -35,7 +35,7 @@ void multi_out_test() {
                   29, 22, 19, 6, 5, 11, 24, 6, 1, 20, 13, 27, 15, 2, 5, 14, 25, 8};
 
     MemoiProf *mp_single = mp_init("cosf(float)", "multi_out", "mp_single.json", 1, 1, MP_FLOAT, MP_FLOAT);
-    mp_set_remove_low_counts(mp_single, 1);
+    mp_set_culling(mp_single, 1);
     mp_set_sampling(mp_single, MP_SAMPLING_RANDOM, 2);
 
     for (int index = 0; index < 100; ++index) {
@@ -55,7 +55,7 @@ void multi_out_test() {
                                   2,
                                   MP_FLOAT, MP_FLOAT,
                                   MP_FLOAT, MP_FLOAT);
-    mp_set_remove_low_counts(mp_multi, 1);
+    mp_set_culling(mp_multi, 1);
 
     for (int index = 0; index < 100; ++index) {
 
@@ -80,7 +80,7 @@ void ComputeQCPU_extract(float expArg, float phi, float *o0, float *o1) {
     *o1 = sinArg * phi;
 }
 
-/*
+
 void hash_table_test() {
 
     GHashTable *table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
@@ -106,7 +106,7 @@ void profiler_test() {
 
     printf("-= Memoization Profiler Test =-\n");
 
-    MemoiProf *mp = mp_init("log", "test", MP_FLOAT, 1, MP_FLOAT);
+    MemoiProf *mp = mp_init("log", "test", "mp.json", 1, 1, MP_FLOAT, MP_FLOAT);
 
     float i1 = 3.14f;
     float o1 = 345.127f;
@@ -141,11 +141,10 @@ void profiler_test() {
 
     mp_print(mp);
 
-    mp_to_json(mp, "mp.json_array");
+    mp_to_json(mp);
     mp = mp_destroy(mp);
 
-
-    MemoiProf *mi2 = mp_init("log", "tested", MP_DOUBLE, 1, MP_DOUBLE);
+    MemoiProf *mi2 = mp_init("log", "tested", "mi2.json", 1, 1, MP_DOUBLE, MP_DOUBLE);
 
     double i12 = 3.14;
     double o12 = 345.127;
@@ -155,14 +154,15 @@ void profiler_test() {
     mp_inc(mi2, &o12, &i12);
     mp_inc(mi2, &o12, &i12);
 
-    mp_to_json(mi2, "mi2.json_array");
+    mp_to_json(mi2);
     mi2 = mp_destroy(mi2);
 
 
-    MemoiProf *mp_pow = mp_init("pow(double,double)", "2 args", MP_DOUBLE, 2, MP_DOUBLE, MP_DOUBLE);
+    MemoiProf *mp_pow = mp_init("pow(double,double)", "2 args", "mp_pow.json", 2, 1, MP_DOUBLE, MP_DOUBLE,
+                                MP_DOUBLE);
     mp_set_call_sites(mp_pow, 1, "global");
-    mp_set_sampling(mp_pow, 100);
-    mp_set_periodic_reporting(mp_pow, 1, 100, "mp_pow.json_array");
+    mp_set_sampling(mp_pow, MP_SAMPLING_RANDOM, 100);
+    mp_set_periodic_reporting(mp_pow, MP_PERIODIC_ON, 100);
 
     double base = 2.0;
     double power = 8.0;
@@ -179,11 +179,10 @@ void profiler_test() {
         mp_inc(mp_pow, &o, &b, &e);
     }
 //    mp_print(mp_pow);
-    mp_to_json(mp_pow, "mp_pow.json_array");
+    mp_to_json(mp_pow);
 
 
-    MemoiProf *mp_numbers = mp_init("cos(double)", "numbers", MP_DOUBLE, 1, MP_DOUBLE);
-//    mp_set_periodic_reporting(mp_numbers, 1, 10, "mp_numbers.json_array");
+    MemoiProf *mp_numbers = mp_init("cos(double)", "numbers", "mp_numbers.json", 1, 1, MP_DOUBLE, MP_DOUBLE);
 
     int keys[] = {15, 8, 14, 7, 7, 12, 3, 12, 22, 10, 18, 14, 25, 18, 26, 24, 29, 23, 20, 13, 1, 5, 3, 9, 21, 14, 29,
                   26, 24, 20, 15, 13, 10, 2, 28, 27, 22, 20, 23, 16, 21, 7, 20, 25, 15, 1, 15, 10, 21, 5, 4, 14, 6, 28,
@@ -196,8 +195,8 @@ void profiler_test() {
         double output = cos(input);
         mp_inc(mp_numbers, &output, &input);
     }
-    mp_set_remove_low_counts(mp_numbers, 1);
-    mp_to_json(mp_numbers, "mp_numbers.json");
+    mp_set_culling(mp_numbers, 1);
+    mp_to_json(mp_numbers);
 
 
     mp_pow = mp_destroy(mp_pow);
