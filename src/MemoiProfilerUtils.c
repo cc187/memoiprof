@@ -55,19 +55,19 @@ uint64_t mp_get_bits(void *value, CType type) {
     uint32_t bits32;
 
     switch (type) {
-        case FLOAT:
+        case MP_FLOAT:
 
             bits32 = *(uint32_t *) value;
             bits64 = bits32;
 
             return bits64 & 0x00000000FFFFFFFF;
 
-        case DOUBLE:
+        case MP_DOUBLE:
 
             bits64 = *(uint64_t *) value;
             return bits64;
 
-        case INT:
+        case MP_INT:
 
             bits32 = *(uint32_t *) value;
             bits64 = bits32;
@@ -99,11 +99,11 @@ const char *mp_type_to_string(CType type) {
 
     switch (type) {
 
-        case FLOAT:
+        case MP_FLOAT:
             return "float";
-        case DOUBLE:
+        case MP_DOUBLE:
             return "double";
-        case INT:
+        case MP_INT:
             return "int";
         default:
             return "";

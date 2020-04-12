@@ -10,6 +10,10 @@
 struct mp_t;
 typedef struct mp_t MemoiProf;
 
+typedef enum sampling_kind_t {
+    MP_SAMPLING_RANDOM, MP_SAMPLING_FIXED, MP_SAMPLING_NONE
+} SamplingKind;
+
 MemoiProf *mp_init(const char *func_sig, const char *id, unsigned int input_count, unsigned int output_count, ...);
 
 MemoiProf *mp_destroy(MemoiProf *mp);
@@ -28,7 +32,7 @@ void mp_to_json(MemoiProf *mp, const char *filename);
 
 void mp_set_call_sites(MemoiProf *mp, unsigned int count, ...);
 
-void mp_set_sampling(MemoiProf *mp, int sampling);
+void mp_set_sampling(MemoiProf *mp, SamplingKind sampling, int sampling_rate);
 
 void mp_set_periodic_reporting(MemoiProf *mp, char is_periodic, int period, char *periodic_filename);
 

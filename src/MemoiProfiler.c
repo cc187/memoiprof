@@ -15,7 +15,6 @@
 #include <glib.h>
 #include <stdarg.h>
 
-
 struct mp_t {
 
     // function config
@@ -43,15 +42,17 @@ struct mp_t {
     const char **call_sites;
 
     // sampling config
-    unsigned int sampling;
-    unsigned int current_sample;
+    SamplingKind sampling;
+    unsigned int sampling_rate;
+    unsigned int sampling_threshold; // for random
+    unsigned int current_sample; // for fixed
 
     // periodic reporting config
     char is_periodic;
     unsigned int period;
     char *periodic_filename;
-    unsigned int periodic_part;
 
+    unsigned int periodic_part;
     // optimization config
     char remove_low_counts;
 };
@@ -103,7 +104,8 @@ MemoiProf *mp_init(const char *func_sig, const char *id, unsigned int input_coun
 
     mp->table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
-    mp_set_sampling(mp, 1u);
+    srand(time(NULL));
+    mp_set_sampling(mp, MP_SAMPLING_NONE, 1u);
 
     mp_set_periodic_reporting(mp, 0, 1, NULL);
 
@@ -209,14 +211,38 @@ static void mp_periodic_report(MemoiProf *mp) {
     }
 }
 
+/**
+ *
+ * Checks whether to skip a profile due to sampling.
+ *
+ * @param mp the MemoiProfile pointer
+ * @return 1 to skip, 0 to not skip
+ */
+char mp_sampling_skip(MemoiProf *mp) {
+
+    switch (mp->sampling) {
+
+        case MP_SAMPLING_RANDOM: {
+            return rand() < mp->sampling_threshold;
+        }
+        case MP_SAMPLING_FIXED:
+            if (mp->current_sample > 0) {
+                mp->current_sample = mp->current_sample - 1;
+                return 1;
+            } else {
+                mp->current_sample = mp->sampling;
+                return 0;
+            }
+        default:
+            return 0;
+    }
+}
+
 void mp_inc(MemoiProf *mp, ...) {
 
     // sampling test and skip
-    if (mp->current_sample > 0) {
-        mp->current_sample = mp->current_sample - 1;
+    if (mp_sampling_skip(mp)) {
         return;
-    } else {
-        mp->current_sample = mp->sampling;
     }
 
     // periodic test
@@ -369,20 +395,38 @@ CType *mp_get_output_types(const MemoiProf *mp) {
 }
 
 /**
- * Sets the sampling rate. If you want to sample 1/x of the calls, sampling needs to be x. The value of sampling should
- * be >= 1, meaning that every call is accounted for.
+ * Sets the sampling kind and rate. By default, sampling is off (MP_SAMPLING_NONE).
+ *
+ * If you want to sample 1/x of the calls, sampling_rate needs to be x. The value of sampling_rate should be >= 1, meaning that every call is accounted for.
+ *
+ * Random sampling profiles a call with probability 1 / x. Fixed sampling profiles a call every x calls.
  *
  * @param mp the MemoiProf instance
- * @param sampling x, where the sampling rate is 1/x
+ * @param sampling the kind of sampling (MP_SAMPLING_RANDOM, MP_SAMPLING_FIXED, MP_SAMPLING_NONE)
+ * @param sampling_rate x, where the sampling_rate rate is 1/x
  */
-void mp_set_sampling(MemoiProf *mp, int sampling) {
+void mp_set_sampling(MemoiProf *mp, SamplingKind sampling, int sampling_rate) {
 
-    if (sampling <= 0) {
-        sampling = 1;
+    if (sampling_rate <= 1) {
+        mp->sampling = MP_SAMPLING_NONE;
+        return;
     }
 
-    mp->sampling = sampling - 1;
-    mp->current_sample = 0u;
+    switch (sampling) {
+        case MP_SAMPLING_RANDOM:
+            mp->sampling_rate = sampling_rate;
+            mp->sampling_threshold = (RAND_MAX + 1u) / mp->sampling_rate;
+            mp->sampling = MP_SAMPLING_RANDOM;
+            break;
+        case MP_SAMPLING_FIXED:
+            mp->sampling_rate = sampling_rate - 1;
+            mp->current_sample = 0u;
+            mp->sampling = MP_SAMPLING_FIXED;
+            break;
+        default:
+            mp->sampling = MP_SAMPLING_NONE;
+            break;
+    }
 }
 
 cJSON *make_json_header(const MemoiProf *mp) {

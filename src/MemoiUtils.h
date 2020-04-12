@@ -10,7 +10,7 @@
  *  @enum
  */
 typedef enum ctype_t {
-    FLOAT, DOUBLE, INT
+    MP_FLOAT, MP_DOUBLE, MP_INT
 } CType;
 
 #endif //MEMOIPROF_MEMOIUTILS_H

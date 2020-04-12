@@ -165,19 +165,19 @@ void mr_print(void *key, void *mr, void *output_type) {
 
     switch (*(CType *) output_type) {
 
-        case FLOAT:
+        case MP_FLOAT:
 
             output_float = *(float *) &bits;
             printf("%s ---> %f (%ux)\n", (char *) key, output_float, counter);
             break;
 
-        case DOUBLE:
+        case MP_DOUBLE:
 
             output_double = *(double *) &bits;
             printf("%s ---> %f (%ux)\n", (char *) key, output_double, counter);
             break;
 
-        case INT:
+        case MP_INT:
 
             output_int = *(int *) &bits;
             printf("%s ---> %d (%ux)\n", (char *) key, output_int, counter);
