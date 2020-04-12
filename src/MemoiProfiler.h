@@ -14,7 +14,21 @@ typedef enum sampling_kind_t {
     MP_SAMPLING_RANDOM, MP_SAMPLING_FIXED, MP_SAMPLING_NONE
 } SamplingKind;
 
-MemoiProf *mp_init(const char *func_sig, const char *id, unsigned int input_count, unsigned int output_count, ...);
+typedef enum periodic_kind_t {
+    MP_PERIODIC_OFF, MP_PERIODIC_ON
+} PeriodicKind;
+
+/**
+ *
+ * @param func_sig
+ * @param id
+ * @param filename the path to the file where the report will be writen (this is duplicated internally, so manage the passed pointer)
+ * @param input_count
+ * @param output_count
+ * @param ...
+ * @return
+ */
+MemoiProf *mp_init(const char *func_sig, const char *id, const char* filename, unsigned int input_count, unsigned int output_count, ...);
 
 MemoiProf *mp_destroy(MemoiProf *mp);
 
@@ -28,13 +42,13 @@ void mp_inc(MemoiProf *mp, ...);
 
 void mp_print(MemoiProf *mp);
 
-void mp_to_json(MemoiProf *mp, const char *filename);
+void mp_to_json(MemoiProf *mp);
 
 void mp_set_call_sites(MemoiProf *mp, unsigned int count, ...);
 
 void mp_set_sampling(MemoiProf *mp, SamplingKind sampling, int sampling_rate);
 
-void mp_set_periodic_reporting(MemoiProf *mp, char is_periodic, int period, char *periodic_filename);
+void mp_set_periodic_reporting(MemoiProf *mp, PeriodicKind periodic_kind, int period);
 
 void mp_set_remove_low_counts(MemoiProf *mp, char remove_low_counts);
 

@@ -21,6 +21,9 @@ struct mp_t {
     char *id;
     char *func_sig;
 
+    // report config
+    char* filename;
+
     // output config
     CType *output_types;
     unsigned int output_count;
@@ -48,18 +51,17 @@ struct mp_t {
     unsigned int current_sample; // for fixed
 
     // periodic reporting config
-    char is_periodic;
+    char periodic_kind;
     unsigned int period;
-    char *periodic_filename;
-
     unsigned int periodic_part;
+
     // optimization config
     char remove_low_counts;
 };
 
 static cJSON *make_json_header(const MemoiProf *mp);
 
-MemoiProf *mp_init(const char *func_sig, const char *id, unsigned int input_count, unsigned int output_count, ...) {
+MemoiProf *mp_init(const char *func_sig, const char *id, const char* filename, unsigned int input_count, unsigned int output_count, ...) {
 
     ZF_LOGI("initializing '%s' for %s", id, func_sig);
 
@@ -77,6 +79,9 @@ MemoiProf *mp_init(const char *func_sig, const char *id, unsigned int input_coun
     size_t id_size = strlen(id) + 1;
     mp->id = calloc(id_size, sizeof *(mp->id));
     strcpy(mp->id, id);
+
+    // report filename
+    mp->filename = strdup(filename);
 
     mp->input_count = input_count;
     mp->output_count = output_count;
@@ -107,7 +112,7 @@ MemoiProf *mp_init(const char *func_sig, const char *id, unsigned int input_coun
     srand(time(NULL));
     mp_set_sampling(mp, MP_SAMPLING_NONE, 1u);
 
-    mp_set_periodic_reporting(mp, 0, 1, NULL);
+    mp_set_periodic_reporting(mp, 0, 1);
 
     mp_set_remove_low_counts(mp, 0);
 
@@ -122,26 +127,21 @@ MemoiProf *mp_init(const char *func_sig, const char *id, unsigned int input_coun
  *  profiling data is lost.
  *
  * @param mp
- * @param is_periodic
+ * @param periodic_kind
  * @param period The number of calls between writes of periodic reports. This number should be > 0. If it is <= 0,
  * periodic reporting will be disabled.
- * @param periodic_filename The name of split file where the results will be saved. This string will be duplicated and
- * stored, so you are responsible for its memory management.
  */
-void mp_set_periodic_reporting(MemoiProf *mp, char is_periodic, int period, char *periodic_filename) {
+void mp_set_periodic_reporting(MemoiProf *mp, PeriodicKind periodic_kind, int period) {
 
-    // periodic reporting is disabled if period <= 0
-    if (period <= 0 || is_periodic == 0) {
+    // periodic reporting is disabled or if period <= 0
+    if (period <= 0 || periodic_kind == MP_PERIODIC_OFF) {
 
-        mp->is_periodic = 0;
+        mp->periodic_kind = MP_PERIODIC_OFF;
         mp->period = 1;
-        mp->periodic_filename = NULL;
-
     } else {
 
-        mp->is_periodic = 1;
+        mp->periodic_kind = MP_PERIODIC_ON;
         mp->period = period;
-        mp->periodic_filename = strdup(periodic_filename);
     }
 
     mp->periodic_part = 0;
@@ -169,11 +169,11 @@ MemoiProf *mp_destroy(MemoiProf *mp) {
 
         free(mp->input_types);
         free(mp->output_types);
-        free(mp->id);
         free(mp->func_sig);
+        free(mp->id);
+        free(mp->filename);
         g_hash_table_destroy(mp->table);
         free(mp->call_sites);
-        free(mp->periodic_filename);
     }
 
     free(mp);
@@ -191,18 +191,19 @@ static void mp_reset(MemoiProf *mp) {
 
 static void mp_periodic_report(MemoiProf *mp) {
 
-    if (mp->is_periodic) {
+    if (mp->periodic_kind == MP_PERIODIC_ON) {
         if (mp->calls >= mp->period) {
 
             // generate partial report
             mp->periodic_part = mp->periodic_part + 1;
 
             // 5 is for the part extension, 4 is to account for digits up to 9999, 1 is for the \0 terminating character
-            unsigned int periodic_filename_size = strlen(mp->periodic_filename) + 5 + 4 + 1;
+            unsigned int periodic_filename_size = strlen(mp->filename) + 5 + 4 + 1;
             char *periodic_filename = calloc(periodic_filename_size, sizeof *periodic_filename);
-            snprintf(periodic_filename, periodic_filename_size, "%s.part%d", mp->periodic_filename, mp->periodic_part);
+            snprintf(periodic_filename, periodic_filename_size, "%s.part%d", mp->filename, mp->periodic_part);
 
-            mp_to_json(mp, periodic_filename);
+            mp_to_json(mp);
+
             free(periodic_filename);
 
             // reset mp
@@ -303,7 +304,7 @@ void mp_print(MemoiProf *mp) {
 }
 
 
-void mp_to_json(MemoiProf *mp, const char *filename) {
+void mp_to_json(MemoiProf *mp) {
 
     cJSON *json_root = make_json_header(mp);
 
@@ -314,7 +315,7 @@ void mp_to_json(MemoiProf *mp, const char *filename) {
     g_hash_table_foreach(mp->table, mr_make_json, info);
     info = ji_destroy(info);
 
-    write_json_and_cleanup(filename, json_root);
+    write_json_and_cleanup(mp->filename, json_root);
 }
 
 

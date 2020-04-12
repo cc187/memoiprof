@@ -34,7 +34,7 @@ void multi_out_test() {
                   21, 9, 29, 27, 22, 20, 28, 9, 29, 27, 17, 14, 9, 19, 18, 24, 26, 7, 6, 25, 10, 2, 6, 5, 29, 5, 1, 17,
                   29, 22, 19, 6, 5, 11, 24, 6, 1, 20, 13, 27, 15, 2, 5, 14, 25, 8};
 
-    MemoiProf *mp_single = mp_init("cosf(float)", "multi_out", 1, 1, MP_FLOAT, MP_FLOAT);
+    MemoiProf *mp_single = mp_init("cosf(float)", "multi_out", "mp_single.json", 1, 1, MP_FLOAT, MP_FLOAT);
     mp_set_remove_low_counts(mp_single, 1);
     mp_set_sampling(mp_single, MP_SAMPLING_RANDOM, 2);
 
@@ -44,12 +44,13 @@ void multi_out_test() {
         float output = cosf(input);
         mp_inc(mp_single, &input, &output);
     }
-    mp_to_json(mp_single, "mp_single.json");
+    mp_to_json(mp_single);
 
     mp_destroy(mp_single);
 
 
     MemoiProf *mp_multi = mp_init("ComputeQCPU_extract(float,float,float*,float*)", "multi_out",
+                                  "mp_multi.json",
                                   2,
                                   2,
                                   MP_FLOAT, MP_FLOAT,
@@ -64,7 +65,7 @@ void multi_out_test() {
         ComputeQCPU_extract(expArg, phi, &o0, &o1);
         mp_inc(mp_multi, &expArg, &phi, &o0, &o1);
     }
-    mp_to_json(mp_multi, "mp_multi.json");
+    mp_to_json(mp_multi);
 
     mp_destroy(mp_multi);
 }

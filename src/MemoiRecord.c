@@ -110,7 +110,7 @@ void mr_make_json(void *key, void *mr, void *info) {
     const uint64_t *output_bits = ((MemoiRec *) mr)->output;
     const unsigned int counter = ((MemoiRec *) mr)->counter;
     unsigned int output_count = ((MemoiRec *) mr)->output_count;
-    CType *output_types = ((MemoiRec *) mr)->output_types;
+//    CType *output_types = ((MemoiRec *) mr)->output_types;
 
     if (json_info->remove_low_counts) {
         if (counter == 1) {
