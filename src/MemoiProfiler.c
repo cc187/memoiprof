@@ -226,15 +226,14 @@ char mp_sampling_skip(MemoiProf *mp) {
 
     switch (mp->sampling) {
 
-        case MP_SAMPLING_RANDOM: {
+        case MP_SAMPLING_RANDOM:
             return rand() < mp->sampling_threshold;
-        }
         case MP_SAMPLING_FIXED:
             if (mp->current_sample > 0) {
                 mp->current_sample = mp->current_sample - 1;
                 return 1;
             } else {
-                mp->current_sample = mp->sampling;
+                mp->current_sample = mp->sampling_rate;
                 return 0;
             }
         default:

@@ -58,7 +58,8 @@ void multi_out_test() {
                                   MP_FLOAT, MP_FLOAT,
                                   MP_FLOAT, MP_FLOAT);
     mp_set_culling(mp_multi, 1);
-    mp_set_periodic_reporting(mp_multi, MP_PERIODIC_ON, 20);
+//    mp_set_periodic_reporting(mp_multi, MP_PERIODIC_ON, 20);
+    mp_set_sampling(mp_multi, MP_SAMPLING_FIXED, 20);
 
     for (int index = 0; index < 100; ++index) {
 
