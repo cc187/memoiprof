@@ -22,7 +22,7 @@ struct mp_t {
     char *func_sig;
 
     // report config
-    char* filename;
+    char *filename;
 
     // output config
     CType *output_types;
@@ -60,8 +60,11 @@ struct mp_t {
 };
 
 static cJSON *make_json_header(const MemoiProf *mp);
+static void mp_to_json_internal(MemoiProf *mp, const char *filename);
 
-MemoiProf *mp_init(const char *func_sig, const char *id, const char* filename, unsigned int input_count, unsigned int output_count, ...) {
+MemoiProf *
+mp_init(const char *func_sig, const char *id, const char *filename, unsigned int input_count, unsigned int output_count,
+        ...) {
 
     ZF_LOGI("initializing '%s' for %s", id, func_sig);
 
@@ -202,7 +205,7 @@ static void mp_periodic_report(MemoiProf *mp) {
             char *periodic_filename = calloc(periodic_filename_size, sizeof *periodic_filename);
             snprintf(periodic_filename, periodic_filename_size, "%s.part%d", mp->filename, mp->periodic_part);
 
-            mp_to_json(mp);
+            mp_to_json_internal(mp, periodic_filename);
 
             free(periodic_filename);
 
@@ -306,18 +309,8 @@ void mp_print(MemoiProf *mp) {
 
 void mp_to_json(MemoiProf *mp) {
 
-    cJSON *json_root = make_json_header(mp);
-
-    /* counts array */
-    cJSON *json_array = cJSON_CreateArray();
-    cJSON_AddItemToObject(json_root, "counts", json_array);
-    json_info *info = ji_init(mp_get_culling(mp), json_array);
-    g_hash_table_foreach(mp->table, mr_make_json, info);
-    info = ji_destroy(info);
-
-    write_json_and_cleanup(mp->filename, json_root);
+    mp_to_json_internal(mp, mp->filename);
 }
-
 
 void mp_set_call_sites(MemoiProf *mp, unsigned int count, ...) {
 
@@ -495,4 +488,18 @@ cJSON *make_json_header(const MemoiProf *mp) {
     }
 
     return json_root;
+}
+
+void mp_to_json_internal(MemoiProf *mp, const char *filename) {
+
+    cJSON *json_root = make_json_header(mp);
+
+    /* counts array */
+    cJSON *json_array = cJSON_CreateArray();
+    cJSON_AddItemToObject(json_root, "counts", json_array);
+    json_info *info = ji_init(mp_get_culling(mp), json_array);
+    g_hash_table_foreach(mp->table, mr_make_json, info);
+    info = ji_destroy(info);
+
+    write_json_and_cleanup(filename, json_root);
 }

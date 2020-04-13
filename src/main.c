@@ -20,7 +20,7 @@ int main() {
 
 //    hash_table_test();
 
-    profiler_test();
+//    profiler_test();
 
     multi_out_test();
 
@@ -34,6 +34,7 @@ void multi_out_test() {
                   21, 9, 29, 27, 22, 20, 28, 9, 29, 27, 17, 14, 9, 19, 18, 24, 26, 7, 6, 25, 10, 2, 6, 5, 29, 5, 1, 17,
                   29, 22, 19, 6, 5, 11, 24, 6, 1, 20, 13, 27, 15, 2, 5, 14, 25, 8};
 
+    /*
     MemoiProf *mp_single = mp_init("cosf(float)", "multi_out", "mp_single.json", 1, 1, MP_FLOAT, MP_FLOAT);
     mp_set_culling(mp_single, 1);
     mp_set_sampling(mp_single, MP_SAMPLING_RANDOM, 2);
@@ -47,6 +48,7 @@ void multi_out_test() {
     mp_to_json(mp_single);
 
     mp_destroy(mp_single);
+    /**/
 
 
     MemoiProf *mp_multi = mp_init("ComputeQCPU_extract(float,float,float*,float*)", "multi_out",
@@ -56,6 +58,7 @@ void multi_out_test() {
                                   MP_FLOAT, MP_FLOAT,
                                   MP_FLOAT, MP_FLOAT);
     mp_set_culling(mp_multi, 1);
+    mp_set_periodic_reporting(mp_multi, MP_PERIODIC_ON, 20);
 
     for (int index = 0; index < 100; ++index) {
 
