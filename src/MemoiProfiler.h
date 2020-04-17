@@ -11,7 +11,7 @@ struct mp_t;
 typedef struct mp_t MemoiProf;
 
 typedef enum sampling_kind_t {
-    MP_SAMPLING_RANDOM, MP_SAMPLING_FIXED, MP_SAMPLING_NONE
+    MP_SAMPLING_RANDOM, MP_SAMPLING_FIXED, MP_SAMPLING_OFF
 } SamplingKind;
 
 typedef enum periodic_kind_t {
@@ -21,6 +21,10 @@ typedef enum periodic_kind_t {
 typedef enum culling_kind_t {
     MP_CULLING_OFF, MP_CULLING_ON
 } CullingKind;
+
+typedef enum approx_kind_t {
+    MP_APPROX_OFF, MP_APPROX_1_BIT, MP_APPROX_2_BIT, MP_APPROX_3_BIT, MP_APPROX_4_BIT
+} ApproxKind;
 
 /**
  *
@@ -55,6 +59,8 @@ void mp_set_sampling(MemoiProf *mp, SamplingKind sampling, int sampling_rate);
 void mp_set_periodic_reporting(MemoiProf *mp, PeriodicKind periodic_kind, int period);
 
 void mp_set_culling(MemoiProf *mp, CullingKind culling_kind);
+
+void mp_set_approx(MemoiProf* mp, ApproxKind approx_kind);
 
 // getters
 

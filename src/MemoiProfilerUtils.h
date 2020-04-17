@@ -19,7 +19,7 @@ int memoi_float_equal(const void *a, const void *b);
 
 void write_json_and_cleanup(const char *filename, cJSON *json_root);
 
-void mp_concat_key(va_list ap, char *key, CType type);
+uint64_t mp_get_bits_from_va(va_list ap, CType type);
 
 void mp_concat_key_with_bits(uint64_t  bits, char *key);
 

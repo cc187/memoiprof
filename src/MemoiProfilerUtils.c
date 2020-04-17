@@ -78,13 +78,11 @@ uint64_t mp_get_bits(void *value, CType type) {
     return 0u;
 }
 
-void mp_concat_key(va_list ap, char *key, CType type) {
+uint64_t mp_get_bits_from_va(va_list ap, CType type) {
 
 
     void *value = va_arg(ap, void *);
-    uint64_t bits = mp_get_bits(value, type);
-
-    mp_concat_key_with_bits(bits, key);
+    return mp_get_bits(value, type);
 }
 
 void mp_concat_key_with_bits(uint64_t  bits, char *key) {

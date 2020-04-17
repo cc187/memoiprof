@@ -57,10 +57,23 @@ struct mp_t {
 
     // optimization config
     CullingKind culling_kind;
+
+    // approximation config
+    ApproxKind approx_kind;
+    uint64_t approx_mask;
 };
 
+const uint64_t APPROX_4_BIT_MASK = 0xfffffffffffffff0;
+const uint64_t APPROX_3_BIT_MASK = 0xfffffffffffffff8;
+const uint64_t APPROX_2_BIT_MASK = 0xfffffffffffffffc;
+const uint64_t APPROX_1_BIT_MASK = 0xfffffffffffffffe;
+const uint64_t APPROX_0_BIT_MASK = 0xffffffffffffffff;
+
 static cJSON *make_json_header(const MemoiProf *mp);
+
 static void mp_to_json_internal(MemoiProf *mp, const char *filename);
+
+static uint64_t mp_approx(MemoiProf *mp, uint64_t bits);
 
 MemoiProf *
 mp_init(const char *func_sig, const char *id, const char *filename, unsigned int input_count, unsigned int output_count,
@@ -113,11 +126,13 @@ mp_init(const char *func_sig, const char *id, const char *filename, unsigned int
     mp->table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
     srand(time(NULL));
-    mp_set_sampling(mp, MP_SAMPLING_NONE, 1u);
+    mp_set_sampling(mp, MP_SAMPLING_OFF, 1u);
 
-    mp_set_periodic_reporting(mp, 0, 1);
+    mp_set_periodic_reporting(mp, MP_PERIODIC_OFF, 1);
 
-    mp_set_culling(mp, 0);
+    mp_set_culling(mp, MP_CULLING_OFF);
+
+    mp_set_approx(mp, MP_APPROX_OFF);
 
     va_end(ap);
 
@@ -258,12 +273,17 @@ void mp_inc(MemoiProf *mp, ...) {
 
     char *key = calloc(mp->max_key_size, sizeof(*key));
 
-    mp_concat_key(ap, key, mp->input_types[0]); // concat the first key
-    for (unsigned int i = 1; i < mp->input_count; ++i) {
+    // concat the first key
+    uint64_t bits = mp_get_bits_from_va(ap, mp->input_types[0]);
+    bits = mp_approx(mp, bits);
+    mp_concat_key_with_bits(bits, key);
 
-        // concat every other key separated by #
+    // concat every other key separated by #
+    for (unsigned int i = 1; i < mp->input_count; ++i) {
         strcat(key, "#");
-        mp_concat_key(ap, key, mp->input_types[i]);
+        bits = mp_get_bits_from_va(ap, mp->input_types[i]);
+        bits = mp_approx(mp, bits);
+        mp_concat_key_with_bits(bits, key);
     }
 
     void *mr = g_hash_table_lookup(mp->table, key);
@@ -290,6 +310,11 @@ void mp_inc(MemoiProf *mp, ...) {
     free(key);
 
     va_end(ap);
+}
+
+uint64_t mp_approx(MemoiProf *mp, uint64_t bits) {
+
+    return bits & mp->approx_mask;
 }
 
 void mp_print(MemoiProf *mp) {
@@ -388,20 +413,20 @@ CType *mp_get_output_types(const MemoiProf *mp) {
 }
 
 /**
- * Sets the sampling kind and rate. By default, sampling is off (MP_SAMPLING_NONE).
+ * Sets the sampling kind and rate. By default, sampling is off (MP_SAMPLING_OFF).
  *
  * If you want to sample 1/x of the calls, sampling_rate needs to be x. The value of sampling_rate should be >= 1, meaning that every call is accounted for.
  *
  * Random sampling profiles a call with probability 1 / x. Fixed sampling profiles a call every x calls.
  *
  * @param mp the MemoiProf instance
- * @param sampling the kind of sampling (MP_SAMPLING_RANDOM, MP_SAMPLING_FIXED, MP_SAMPLING_NONE)
+ * @param sampling the kind of sampling (MP_SAMPLING_RANDOM, MP_SAMPLING_FIXED, MP_SAMPLING_OFF)
  * @param sampling_rate x, where the sampling_rate rate is 1/x
  */
 void mp_set_sampling(MemoiProf *mp, SamplingKind sampling, int sampling_rate) {
 
     if (sampling_rate <= 1) {
-        mp->sampling = MP_SAMPLING_NONE;
+        mp->sampling = MP_SAMPLING_OFF;
         return;
     }
 
@@ -417,7 +442,35 @@ void mp_set_sampling(MemoiProf *mp, SamplingKind sampling, int sampling_rate) {
             mp->sampling = MP_SAMPLING_FIXED;
             break;
         default:
-            mp->sampling = MP_SAMPLING_NONE;
+            mp->sampling = MP_SAMPLING_OFF;
+            break;
+    }
+}
+
+void mp_set_approx(MemoiProf *mp, ApproxKind approx_kind) {
+
+    mp->approx_kind = approx_kind;
+
+    switch (approx_kind) {
+
+        case MP_APPROX_OFF:
+            mp->approx_mask = APPROX_0_BIT_MASK;
+            break;
+        case MP_APPROX_1_BIT:
+            mp->approx_mask = APPROX_1_BIT_MASK;
+            break;
+        case MP_APPROX_2_BIT:
+            mp->approx_mask = APPROX_2_BIT_MASK;
+            break;
+        case MP_APPROX_3_BIT:
+            mp->approx_mask = APPROX_3_BIT_MASK;
+            break;
+        case MP_APPROX_4_BIT:
+            mp->approx_mask = APPROX_4_BIT_MASK;
+            break;
+        default:
+            mp->approx_mask = APPROX_0_BIT_MASK;
+            mp->approx_kind = MP_APPROX_OFF;
             break;
     }
 }
