@@ -87,7 +87,7 @@ void mr_make_json(void *key, void *mr, void *user_data);
  */
 void mr_print(void *key, void *mr, void *output_type);
 
-json_info *ji_init(char opt, void *json_array);
+json_info *ji_init(int culling_on, float culling_ratio, void *json_array, unsigned int total_calls);
 
 json_info *ji_destroy(json_info *ji);
 

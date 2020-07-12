@@ -397,10 +397,10 @@ void multi_out_test() {
                                   2,
                                   MP_FLOAT, MP_FLOAT,
                                   MP_FLOAT, MP_FLOAT);
-    mp_set_culling(mp_multi, MP_CULLING_OFF);
+    mp_set_culling(mp_multi, MP_CULLING_OFF, 0.0f);
 //    mp_set_periodic_reporting(mp_multi, MP_PERIODIC_ON, 20);
     mp_set_sampling(mp_multi, MP_SAMPLING_OFF, 20);
-    mp_set_approx(mp_multi, MP_APPROX_4_BIT);
+    mp_set_approx(mp_multi, MP_APPROX_ON, 4);
 
     for (int index = 0; index < 16; ++index) {
 
@@ -540,7 +540,7 @@ void profiler_test() {
         double output = cos(input);
         mp_inc(mp_numbers, &output, &input);
     }
-    mp_set_culling(mp_numbers, 1);
+    mp_set_culling(mp_numbers, 1, 0.0);
     mp_to_json(mp_numbers);
 
 

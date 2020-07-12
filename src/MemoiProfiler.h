@@ -23,7 +23,7 @@ typedef enum culling_kind_t {
 } CullingKind;
 
 typedef enum approx_kind_t {
-    MP_APPROX_OFF, MP_APPROX_1_BIT, MP_APPROX_2_BIT, MP_APPROX_3_BIT, MP_APPROX_4_BIT
+    MP_APPROX_OFF, MP_APPROX_ON
 } ApproxKind;
 
 /**
@@ -58,9 +58,9 @@ void mp_set_sampling(MemoiProf *mp, SamplingKind sampling, int sampling_rate);
 
 void mp_set_periodic_reporting(MemoiProf *mp, PeriodicKind periodic_kind, int period);
 
-void mp_set_culling(MemoiProf *mp, CullingKind culling_kind);
+void mp_set_culling(MemoiProf *mp, CullingKind culling_kind, float culling_ratio);
 
-void mp_set_approx(MemoiProf* mp, ApproxKind approx_kind);
+void mp_set_approx(MemoiProf *mp, ApproxKind approx_kind, unsigned int approx_bits);
 
 // getters
 
@@ -89,8 +89,6 @@ unsigned int mp_get_output_count(const MemoiProf *mp);
 CType *mp_get_input_types(const MemoiProf *mp);
 
 CType *mp_get_output_types(const MemoiProf *mp);
-
-char mp_get_culling(MemoiProf *mp);
 
 #endif // MEMOIPROF_MEMOIPROFILER_H
 

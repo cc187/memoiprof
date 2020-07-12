@@ -57,17 +57,12 @@ struct mp_t {
 
     // optimization config
     CullingKind culling_kind;
+    float culling_ratio;
 
     // approximation config
     ApproxKind approx_kind;
     uint64_t approx_mask;
 };
-
-const uint64_t APPROX_4_BIT_MASK = 0xfffffffffffffff0;
-const uint64_t APPROX_3_BIT_MASK = 0xfffffffffffffff8;
-const uint64_t APPROX_2_BIT_MASK = 0xfffffffffffffffc;
-const uint64_t APPROX_1_BIT_MASK = 0xfffffffffffffffe;
-const uint64_t APPROX_0_BIT_MASK = 0xffffffffffffffff;
 
 static cJSON *make_json_header(const MemoiProf *mp);
 
@@ -130,9 +125,9 @@ mp_init(const char *func_sig, const char *id, const char *filename, unsigned int
 
     mp_set_periodic_reporting(mp, MP_PERIODIC_OFF, 1);
 
-    mp_set_culling(mp, MP_CULLING_OFF);
+    mp_set_culling(mp, MP_CULLING_OFF, 0.0f);
 
-    mp_set_approx(mp, MP_APPROX_OFF);
+    mp_set_approx(mp, MP_APPROX_OFF, 0);
 
     va_end(ap);
 
@@ -171,14 +166,10 @@ void mp_set_periodic_reporting(MemoiProf *mp, PeriodicKind periodic_kind, int pe
  * @param mp
  * @param culling_kind MP_CULLING_ON or MP_CULLING_OFF
  */
-void mp_set_culling(MemoiProf *mp, CullingKind culling_kind) {
+void mp_set_culling(MemoiProf *mp, CullingKind culling_kind, float culling_ratio) {
 
     mp->culling_kind = culling_kind;
-}
-
-char mp_get_culling(MemoiProf *mp) {
-
-    return (mp->culling_kind == MP_CULLING_ON);
+    mp->culling_ratio = culling_ratio;
 }
 
 MemoiProf *mp_destroy(MemoiProf *mp) {
@@ -447,31 +438,16 @@ void mp_set_sampling(MemoiProf *mp, SamplingKind sampling, int sampling_rate) {
     }
 }
 
-void mp_set_approx(MemoiProf *mp, ApproxKind approx_kind) {
+void mp_set_approx(MemoiProf *mp, ApproxKind approx_kind, unsigned int approx_bits) {
 
     mp->approx_kind = approx_kind;
 
-    switch (approx_kind) {
+    if(approx_kind == MP_APPROX_OFF) {
 
-        case MP_APPROX_OFF:
-            mp->approx_mask = APPROX_0_BIT_MASK;
-            break;
-        case MP_APPROX_1_BIT:
-            mp->approx_mask = APPROX_1_BIT_MASK;
-            break;
-        case MP_APPROX_2_BIT:
-            mp->approx_mask = APPROX_2_BIT_MASK;
-            break;
-        case MP_APPROX_3_BIT:
-            mp->approx_mask = APPROX_3_BIT_MASK;
-            break;
-        case MP_APPROX_4_BIT:
-            mp->approx_mask = APPROX_4_BIT_MASK;
-            break;
-        default:
-            mp->approx_mask = APPROX_0_BIT_MASK;
-            mp->approx_kind = MP_APPROX_OFF;
-            break;
+        mp->approx_mask = 0xffffffffffffffff;
+    }else{
+
+        mp->approx_mask = (0xffffffffffffffff >> approx_bits) << approx_bits;
     }
 }
 
@@ -549,9 +525,9 @@ void mp_to_json_internal(MemoiProf *mp, const char *filename) {
     /* counts array */
     cJSON *json_array = cJSON_CreateArray();
     cJSON_AddItemToObject(json_root, "counts", json_array);
-    json_info *info = ji_init(mp_get_culling(mp), json_array);
+    json_info *info = ji_init(mp->culling_kind == MP_CULLING_ON, mp->culling_ratio, json_array, mp->calls);
     g_hash_table_foreach(mp->table, mr_make_json, info);
-    info = ji_destroy(info);
+    ji_destroy(info);
 
     write_json_and_cleanup(filename, json_root);
 }

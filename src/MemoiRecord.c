@@ -12,7 +12,9 @@
 
 struct ji_t {
     cJSON *json_array;
-    char remove_low_counts;
+    int culling_on;
+    float culling_ratio;
+    unsigned int total_calls;
 };
 
 struct mr_t {
@@ -24,23 +26,21 @@ struct mr_t {
     CType *output_types;
 };
 
-json_info *ji_init(char opt, void *json_array) {
+json_info *ji_init(int culling_on, float culling_ratio, void *json_array, unsigned int total_calls) {
 
     json_info *ji = malloc(sizeof(*ji));
 
-    ji->remove_low_counts = opt;
+    ji->culling_on = culling_on;
+    ji->culling_ratio = culling_ratio;
     ji->json_array = json_array;
+    ji->total_calls = total_calls;
 
     return ji;
 }
 
 json_info *ji_destroy(json_info *ji) {
 
-    if (ji != NULL) {
-
-        free(ji);
-    }
-
+    free(ji);
     return NULL;
 }
 
@@ -112,8 +112,8 @@ void mr_make_json(void *key, void *mr, void *info) {
     unsigned int output_count = ((MemoiRec *) mr)->output_count;
 //    CType *output_types = ((MemoiRec *) mr)->output_types;
 
-    if (json_info->remove_low_counts) {
-        if (counter == 1) {
+    if (json_info->culling_on) {
+        if (counter / json_info->total_calls < json_info->culling_ratio) {
             return;
         }
     }
