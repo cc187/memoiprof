@@ -26,6 +26,8 @@ typedef enum approx_kind_t {
     MP_APPROX_OFF, MP_APPROX_ON
 } ApproxKind;
 
+EXTERN_C_BEGIN
+
 /**
  *
  * @param func_sig
@@ -39,7 +41,6 @@ typedef enum approx_kind_t {
 MemoiProf *mp_init(const char *func_sig, const char *id, const char* filename, unsigned int input_count, unsigned int output_count, ...);
 
 MemoiProf *mp_destroy(MemoiProf *mp);
-
 
 /**
  *
@@ -89,6 +90,8 @@ unsigned int mp_get_output_count(const MemoiProf *mp);
 CType *mp_get_input_types(const MemoiProf *mp);
 
 CType *mp_get_output_types(const MemoiProf *mp);
+
+EXTERN_C_END
 
 #endif // MEMOIPROF_MEMOIPROFILER_H
 
