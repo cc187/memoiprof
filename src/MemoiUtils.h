@@ -21,4 +21,8 @@ typedef enum ctype_t {
     MP_FLOAT, MP_DOUBLE, MP_INT
 } CType;
 
+EXTERN_C_BEGIN
+char* mp_make_report_path(const char* dir, const char* id);
+EXTERN_C_END
+
 #endif //MEMOIPROF_MEMOIUTILS_H

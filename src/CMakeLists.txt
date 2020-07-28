@@ -6,7 +6,11 @@ set(MP_SRC
         MemoiProfiler.c
         MemoiProfiler.h
         MemoiRecord.c
-        MemoiRecord.h MemoiUtils.h MemoiProfilerUtils.c MemoiProfilerUtils.h)
+        MemoiRecord.h
+        MemoiUtils.h
+        MemoiProfilerUtils.c
+        MemoiProfilerUtils.h
+        MemoiUtils.c)
 
 set(MP_RUN_SRC
         main.c)
