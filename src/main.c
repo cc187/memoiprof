@@ -525,6 +525,7 @@ void profiler_test() {
     }
 //    mp_print(mp_pow);
     mp_to_json(mp_pow);
+    mp_pow = mp_destroy(mp_pow);
 
 
     MemoiProf *mp_numbers = mp_init("cos(double)", "numbers", "mp_numbers.json", 1, 1, MP_DOUBLE, MP_DOUBLE);
@@ -543,7 +544,6 @@ void profiler_test() {
     mp_set_culling(mp_numbers, 1, 0.0);
     mp_to_json(mp_numbers);
 
-
-    mp_pow = mp_destroy(mp_pow);
+    mp_numbers = mp_destroy(mp_numbers);
 }
 /**/

@@ -74,7 +74,7 @@ MemoiProf *
 mp_init(const char *func_sig, const char *id, const char *filename, unsigned int input_count, unsigned int output_count,
         ...) {
 
-    ZF_LOGI("initializing '%s' for %s", id, func_sig);
+    ZF_LOGI("[%s - %s] initializing", func_sig, id);
 
     va_list ap;
     va_start(ap, output_count);
@@ -149,10 +149,12 @@ void mp_set_periodic_reporting(MemoiProf *mp, PeriodicKind periodic_kind, int pe
     // periodic reporting is disabled or if period <= 0
     if (period <= 0 || periodic_kind == MP_PERIODIC_OFF) {
 
+        ZF_LOGI("[%s - %s] setting periodic reporting to MP_PERIODIC_OFF", mp->func_sig, mp->id);
         mp->periodic_kind = MP_PERIODIC_OFF;
         mp->period = 1;
     } else {
 
+        ZF_LOGI("[%s - %s] setting periodic reporting to MP_PERIODIC_ON (%d)", mp->func_sig, mp->id, period);
         mp->periodic_kind = MP_PERIODIC_ON;
         mp->period = period;
     }
@@ -168,6 +170,10 @@ void mp_set_periodic_reporting(MemoiProf *mp, PeriodicKind periodic_kind, int pe
  */
 void mp_set_culling(MemoiProf *mp, CullingKind culling_kind, float culling_ratio) {
 
+    ZF_LOGI("[%s - %s] setting culling to %s (%f)", mp->func_sig, mp->id,
+            culling_kind == MP_CULLING_OFF ? "MP_CULLING_OFF" : "MP_CULLING_ON",
+            culling_ratio);
+
     mp->culling_kind = culling_kind;
     mp->culling_ratio = culling_ratio;
 }
@@ -175,6 +181,7 @@ void mp_set_culling(MemoiProf *mp, CullingKind culling_kind, float culling_ratio
 MemoiProf *mp_destroy(MemoiProf *mp) {
 
     if (mp != NULL) {
+        ZF_LOGI("[%s - %s] destroying", mp->func_sig, mp->id);
 
         free(mp->input_types);
         free(mp->output_types);
@@ -324,8 +331,9 @@ void mp_print(MemoiProf *mp) {
 
 void mp_to_json(MemoiProf *mp) {
 
-    ZF_LOGI("printing json report for %s", mp->func_sig);
+    ZF_LOGI("[%s - %s] printing json report (%s)", mp->func_sig, mp->id, mp->filename);
     mp_to_json_internal(mp, mp->filename);
+    ZF_LOGI("[%s - %s] done printing json report", mp->func_sig, mp->id);
 }
 
 void mp_set_call_sites(MemoiProf *mp, unsigned int count, ...) {
@@ -418,22 +426,26 @@ CType *mp_get_output_types(const MemoiProf *mp) {
 void mp_set_sampling(MemoiProf *mp, SamplingKind sampling, int sampling_rate) {
 
     if (sampling_rate <= 1) {
+        ZF_LOGI("[%s - %s] setting sampling to MP_SAMPLING_OFF", mp->func_sig, mp->id);
         mp->sampling = MP_SAMPLING_OFF;
         return;
     }
 
     switch (sampling) {
         case MP_SAMPLING_RANDOM:
+            ZF_LOGI("[%s - %s] setting sampling to MP_SAMPLING_RANDOM (%d)", mp->func_sig, mp->id, sampling_rate);
             mp->sampling_rate = sampling_rate;
             mp->sampling_threshold = (RAND_MAX + 1u) / mp->sampling_rate;
             mp->sampling = MP_SAMPLING_RANDOM;
             break;
         case MP_SAMPLING_FIXED:
+            ZF_LOGI("[%s - %s] setting sampling to MP_SAMPLING_FIXED (%d)", mp->func_sig, mp->id, sampling_rate);
             mp->sampling_rate = sampling_rate - 1;
             mp->current_sample = 0u;
             mp->sampling = MP_SAMPLING_FIXED;
             break;
         default:
+            ZF_LOGI("[%s - %s] setting sampling to MP_SAMPLING_OFF", mp->func_sig, mp->id);
             mp->sampling = MP_SAMPLING_OFF;
             break;
     }
@@ -443,11 +455,13 @@ void mp_set_approx(MemoiProf *mp, ApproxKind approx_kind, unsigned int approx_bi
 
     mp->approx_kind = approx_kind;
 
-    if(approx_kind == MP_APPROX_OFF) {
+    if (approx_kind == MP_APPROX_OFF) {
 
+        ZF_LOGI("[%s - %s] setting approximation to MP_APPROX_OFF", mp->func_sig, mp->id);
         mp->approx_mask = 0xffffffffffffffff;
-    }else{
+    } else {
 
+        ZF_LOGI("[%s - %s] setting approximation to MP_APPROX_ON (%u)", mp->func_sig, mp->id, approx_bits);
         mp->approx_mask = (0xffffffffffffffff >> approx_bits) << approx_bits;
     }
 }
@@ -513,7 +527,6 @@ cJSON *make_json_header(const MemoiProf *mp) {
     for (unsigned int i = 0; i < call_site_count; ++i) {
 
         cJSON_InsertItemInArray(call_sites_array, 0, cJSON_CreateString(call_sites[i]));
-//        cJSON_AddItemToArray(call_sites_array, cJSON_CreateString(call_sites[i]));
     }
 
     return json_root;
@@ -526,14 +539,15 @@ void mp_to_json_internal(MemoiProf *mp, const char *filename) {
     /* counts array */
     cJSON *counts_object = cJSON_CreateObject();
     cJSON_AddItemToObject(json_root, "counts", counts_object);
-    ZF_LOGI("made 'counts' object for %s", mp->func_sig);
+    ZF_LOGD("[%s - %s] made counts object", mp->func_sig, mp->id);
+
     json_info *info = ji_init(mp->culling_kind == MP_CULLING_ON, mp->culling_ratio, counts_object, mp->calls);
-    ZF_LOGI("made 'json_info' object for %s, calling for each", mp->func_sig);
+    ZF_LOGD("[%s - %s] made json_info object", mp->func_sig, mp->id);
+
     g_hash_table_foreach(mp->table, mr_make_json, info);
-    ZF_LOGI("for each terminated for %s", mp->func_sig);
+    ZF_LOGD("[%s - %s] foreach done", mp->func_sig, mp->id);
     ji_destroy(info);
 
-    ZF_LOGI("writing json to file for %s", mp->func_sig);
     write_json_and_cleanup(filename, json_root);
-    ZF_LOGI("done writing json for %s", mp->func_sig);
+    ZF_LOGD("[%s - %s] writing json and cleanup done", mp->func_sig, mp->id);
 }
