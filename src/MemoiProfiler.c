@@ -324,6 +324,7 @@ void mp_print(MemoiProf *mp) {
 
 void mp_to_json(MemoiProf *mp) {
 
+    ZF_LOGI("printing json report for %s", mp->func_sig);
     mp_to_json_internal(mp, mp->filename);
 }
 
@@ -525,9 +526,14 @@ void mp_to_json_internal(MemoiProf *mp, const char *filename) {
     /* counts array */
     cJSON *counts_object = cJSON_CreateObject();
     cJSON_AddItemToObject(json_root, "counts", counts_object);
+    ZF_LOGI("made 'counts' object for %s", mp->func_sig);
     json_info *info = ji_init(mp->culling_kind == MP_CULLING_ON, mp->culling_ratio, counts_object, mp->calls);
+    ZF_LOGI("made 'json_info' object for %s, calling for each", mp->func_sig);
     g_hash_table_foreach(mp->table, mr_make_json, info);
+    ZF_LOGI("for each terminated for %s", mp->func_sig);
     ji_destroy(info);
 
+    ZF_LOGI("writing json to file for %s", mp->func_sig);
     write_json_and_cleanup(filename, json_root);
+    ZF_LOGI("done writing json for %s", mp->func_sig);
 }

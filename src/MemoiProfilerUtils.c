@@ -21,7 +21,7 @@ void write_json_and_cleanup(const char *filename, cJSON *json_root) {
     }
 
 //    char *output = cJSON_Print(json_root);
-    char *output = cJSON_PrintBuffered(json_root, 50 * 1024 * 1024, 0);
+    char *output = cJSON_PrintBuffered(json_root, 250 * 1024 * 1024, 0);
 //    fprintf(f, "%s", output);
     int res = fputs(output, f);
     if (res == EOF) {
