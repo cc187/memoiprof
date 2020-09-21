@@ -1411,7 +1411,8 @@ CJSON_PUBLIC(void) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJ
     item->string = (char *) string;
 #pragma GCC diagnostic pop
     item->type |= cJSON_StringIsConst;
-    cJSON_AddItemToArray(object, item);
+//    cJSON_AddItemToArray(object, item);
+    cJSON_InsertItemInArray(object, 0, item); // adds item at the start of the array.
 }
 
 CJSON_PUBLIC(void) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item) {
