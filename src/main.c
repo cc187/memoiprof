@@ -20,9 +20,9 @@ int main() {
 
 //    hash_table_test();
 
-//    profiler_test();
+    profiler_test();
 
-    multi_out_test();
+//    multi_out_test();
 
     return 0;
 }

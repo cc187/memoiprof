@@ -11,7 +11,7 @@
 #include <string.h>
 
 struct ji_t {
-    cJSON *json_array;
+    cJSON *counts_object;
     int culling_on;
     float culling_ratio;
     unsigned int total_calls;
@@ -26,13 +26,13 @@ struct mr_t {
     CType *output_types;
 };
 
-json_info *ji_init(int culling_on, float culling_ratio, void *json_array, unsigned int total_calls) {
+json_info *ji_init(int culling_on, float culling_ratio, void *counts_object, unsigned int total_calls) {
 
     json_info *ji = malloc(sizeof(*ji));
 
     ji->culling_on = culling_on;
     ji->culling_ratio = culling_ratio;
-    ji->json_array = json_array;
+    ji->counts_object = counts_object;
     ji->total_calls = total_calls;
 
     return ji;
@@ -106,21 +106,27 @@ void mr_make_json(void *key, void *mr, void *info) {
 
     json_info *json_info = info;
 
-    const char *input_string = ((MemoiRec *) mr)->input;
-    const uint64_t *output_bits = ((MemoiRec *) mr)->output;
+    // get the total calls counter and cull if needed
     const unsigned int counter = ((MemoiRec *) mr)->counter;
-    unsigned int output_count = ((MemoiRec *) mr)->output_count;
-//    CType *output_types = ((MemoiRec *) mr)->output_types;
-
     if (json_info->culling_on) {
         if (counter / json_info->total_calls < json_info->culling_ratio) {
             return;
         }
     }
 
+    // create the "count" JSON object
     struct cJSON *count = cJSON_CreateObject();
 
+    // add the total calls counter
+    cJSON_AddNumberToObject(count, "counter", counter);
+
+    // add the key / concatenated inputs
+    const char *input_string = ((MemoiRec *) mr)->input;
     cJSON_AddStringToObject(count, "key", input_string);
+
+    // add the output
+    const uint64_t *output_bits = ((MemoiRec *) mr)->output;
+    unsigned int output_count = ((MemoiRec *) mr)->output_count;
 
     const unsigned int outputs_size = 16 * output_count;
     const unsigned int separators_size = output_count - 1;
@@ -140,9 +146,8 @@ void mr_make_json(void *key, void *mr, void *info) {
 
     cJSON_AddStringToObject(count, "output", output_string);
 
-    cJSON_AddNumberToObject(count, "counter", counter);
-
-    cJSON_InsertItemInArray(json_info->json_array, 0, count);
+    // add the "count" JSON object to the "counts" array
+    cJSON_AddItemToObject(json_info->counts_object, input_string, count);
 }
 
 #pragma GCC diagnostic pop

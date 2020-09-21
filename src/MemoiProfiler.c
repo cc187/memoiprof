@@ -523,9 +523,9 @@ void mp_to_json_internal(MemoiProf *mp, const char *filename) {
     cJSON *json_root = make_json_header(mp);
 
     /* counts array */
-    cJSON *json_array = cJSON_CreateArray();
-    cJSON_AddItemToObject(json_root, "counts", json_array);
-    json_info *info = ji_init(mp->culling_kind == MP_CULLING_ON, mp->culling_ratio, json_array, mp->calls);
+    cJSON *counts_object = cJSON_CreateObject();
+    cJSON_AddItemToObject(json_root, "counts", counts_object);
+    json_info *info = ji_init(mp->culling_kind == MP_CULLING_ON, mp->culling_ratio, counts_object, mp->calls);
     g_hash_table_foreach(mp->table, mr_make_json, info);
     ji_destroy(info);
 
