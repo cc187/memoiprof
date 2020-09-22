@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <glib.h>
 #include <stdarg.h>
+#include <libgen.h>
 
 struct mp_t {
 
@@ -98,10 +99,13 @@ mp_init(const char *func_sig, const char *id, const char *filename, unsigned int
     mp->filename = strdup(filename);
 
     // report index filename
-    const char* index_prefix = "index_";
-    const size_t index_filename_length = strlen(filename) + strlen(index_prefix) + 1;
-    mp->index_filename = calloc(index_filename_length, sizeof *(mp->index_filename)); // +1 for \0
-    snprintf(mp->index_filename, index_filename_length, "%s%s", index_prefix, mp->filename);
+    char *dir_name = dirname(strdup(filename));
+    char *base_name = basename(strdup(filename));
+    const char *index_prefix = "index_";
+    const size_t index_filename_len = strlen(index_prefix) + strlen(dir_name) + strlen(base_name) + 2; // for / and \0
+
+    mp->index_filename = calloc(index_filename_len, sizeof *(mp->index_filename));
+    snprintf(mp->index_filename, index_filename_len, "%s/%s%s", dir_name, index_prefix, base_name);
 
 
     mp->input_count = input_count;
