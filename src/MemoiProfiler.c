@@ -23,6 +23,7 @@ struct mp_t {
 
     // report config
     char *filename;
+    char *index_filename;
 
     // output config
     CType *output_types;
@@ -64,6 +65,8 @@ struct mp_t {
     uint64_t approx_mask;
 };
 
+static cJSON *make_json_index(const MemoiProf *mp);
+
 static cJSON *make_json_header(const MemoiProf *mp);
 
 static void mp_to_json_internal(MemoiProf *mp, const char *filename);
@@ -93,6 +96,13 @@ mp_init(const char *func_sig, const char *id, const char *filename, unsigned int
 
     // report filename
     mp->filename = strdup(filename);
+
+    // report index filename
+    const char* index_prefix = "index_";
+    const size_t index_filename_length = strlen(filename) + strlen(index_prefix) + 1;
+    mp->index_filename = calloc(index_filename_length, sizeof *(mp->index_filename)); // +1 for \0
+    snprintf(mp->index_filename, index_filename_length, "%s%s", index_prefix, mp->filename);
+
 
     mp->input_count = input_count;
     mp->output_count = output_count;
@@ -188,6 +198,7 @@ MemoiProf *mp_destroy(MemoiProf *mp) {
         free(mp->func_sig);
         free(mp->id);
         free(mp->filename);
+        free(mp->index_filename);
         g_hash_table_destroy(mp->table);
         free(mp->call_sites);
     }
@@ -332,7 +343,13 @@ void mp_print(MemoiProf *mp) {
 void mp_to_json(MemoiProf *mp) {
 
     ZF_LOGI("[%s - %s] printing json report (%s)", mp->func_sig, mp->id, mp->filename);
+
+    // full report (or main part in case of periodic)
     mp_to_json_internal(mp, mp->filename);
+
+    // index
+    write_json_and_cleanup(mp->index_filename, make_json_index(mp));
+
     ZF_LOGI("[%s - %s] done printing json report", mp->func_sig, mp->id);
 }
 
@@ -464,6 +481,28 @@ void mp_set_approx(MemoiProf *mp, ApproxKind approx_kind, unsigned int approx_bi
         ZF_LOGI("[%s - %s] setting approximation to MP_APPROX_ON (%u)", mp->func_sig, mp->id, approx_bits);
         mp->approx_mask = (0xffffffffffffffff >> approx_bits) << approx_bits;
     }
+}
+
+cJSON *make_json_index(const MemoiProf *mp) {
+
+    cJSON *json_root = cJSON_CreateObject();
+
+    /* function information */
+    cJSON_AddStringToObject(json_root, "id", mp_get_id(mp));
+    cJSON_AddStringToObject(json_root, "funcSig", mp_get_func_sig(mp));
+
+    /* call site information */
+    cJSON *call_sites_array = cJSON_CreateArray();
+    cJSON_AddItemToObject(json_root, "call_sites", call_sites_array);
+
+    unsigned int call_site_count = mp_get_call_site_count(mp);
+    const char **call_sites = mp_get_call_sites(mp);
+    for (unsigned int i = 0; i < call_site_count; ++i) {
+
+        cJSON_InsertItemInArray(call_sites_array, 0, cJSON_CreateString(call_sites[i]));
+    }
+
+    return json_root;
 }
 
 cJSON *make_json_header(const MemoiProf *mp) {

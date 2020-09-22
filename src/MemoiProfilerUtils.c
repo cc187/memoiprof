@@ -16,7 +16,7 @@ void write_json_and_cleanup(const char *filename, cJSON *json_root) {
     FILE *f = fopen(filename, "w");
     if (f == NULL) {
 
-        printf("Error opening file: %s\n", filename);
+        ZF_LOGI("Error opening file: %s\n", filename);
         return;
     }
 
