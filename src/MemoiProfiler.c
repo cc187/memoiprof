@@ -14,8 +14,12 @@
 #include <stdio.h>
 #include <glib.h>
 #include <stdarg.h>
+#include <uuid/uuid.h>
 
 struct mp_t {
+
+    // UUID
+    char* uuid;
 
     // function config
     char *id;
@@ -83,6 +87,12 @@ mp_init(const char *func_sig, const char *id, const char *filename, unsigned int
     va_start(ap, output_count);
 
     MemoiProf *mp = malloc(sizeof *mp);
+
+    // uuid
+    uuid_t binuuid;
+    uuid_generate_random(binuuid);
+    mp->uuid = calloc(37, sizeof *(mp->uuid)); // 37 = 36 chars for uuid + 1 for \0
+    uuid_unparse_upper(binuuid, mp->uuid);
 
     // function signature
     size_t name_size = strlen(func_sig) + 1;
@@ -194,6 +204,7 @@ MemoiProf *mp_destroy(MemoiProf *mp) {
     if (mp != NULL) {
         ZF_LOGI("[%s - %s] destroying", mp->func_sig, mp->id);
 
+        free(mp->uuid);
         free(mp->input_types);
         free(mp->output_types);
         free(mp->func_sig);
@@ -379,6 +390,9 @@ const char *mp_get_id(const MemoiProf *mp) {
     return mp->id;
 }
 
+const char *mp_get_uuid(const MemoiProf *mp) {
+    return mp->uuid;
+}
 
 const char *mp_get_func_sig(const MemoiProf *mp) {
     return mp->func_sig;
@@ -514,6 +528,9 @@ cJSON *make_json_header(const MemoiProf *mp) {
     const unsigned int output_count = mp_get_output_count(mp);
 
     /* function information */
+    cJSON_AddStringToObject(json_root, "uuid", mp_get_uuid(mp));
+
+    /* function information */
     cJSON_AddStringToObject(json_root, "id", mp_get_id(mp));
     cJSON_AddStringToObject(json_root, "funcSig", mp_get_func_sig(mp));
     cJSON_AddNumberToObject(json_root, "inputCount", input_count);
@@ -572,7 +589,7 @@ cJSON *make_json_header(const MemoiProf *mp) {
     return json_root;
 }
 
-void mp_to_json_internal(MemoiProf *mp, const char *filename) {
+static void mp_to_json_internal(MemoiProf *mp, const char *filename) {
 
     cJSON *json_root = make_json_header(mp);
 

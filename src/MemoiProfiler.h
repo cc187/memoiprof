@@ -69,6 +69,8 @@ CType *mp_get_input_type(const MemoiProf *mp);
 
 const char *mp_get_id(const MemoiProf *mp);
 
+const char *mp_get_uuid(const MemoiProf *mp);
+
 const char *mp_get_func_sig(const MemoiProf *mp);
 
 unsigned int mp_get_table_size(const MemoiProf *mp);

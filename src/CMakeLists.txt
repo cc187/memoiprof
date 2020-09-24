@@ -29,7 +29,7 @@ endif ()
 target_include_directories(mp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # LINK LIBRARIES FOR LIBRARY
-target_link_libraries(mp cJSON zf_log)
+target_link_libraries(mp cJSON zf_log uuid)
 include_directories(${GTK2_INCLUDE_DIRS})
 target_link_libraries(mp ${GTK2_LIBRARIES})
 
