@@ -184,10 +184,11 @@ void mp_set_periodic_reporting(MemoiProf *mp, PeriodicKind periodic_kind, int pe
 }
 
 /**
- * Controls whether low count entries (count == 1) are removed when printing the JSON file.
+ * Controls whether low count entries (based on ratio) are removed when printing the JSON file.
  *
  * @param mp
  * @param culling_kind MP_CULLING_ON or MP_CULLING_OFF
+ * @param culling_ratio the repetition threshold for a given input to be writen in the report
  */
 void mp_set_culling(MemoiProf *mp, CullingKind culling_kind, float culling_ratio) {
 
@@ -350,7 +351,6 @@ void mp_print(MemoiProf *mp) {
 
     printf("==================================================\n");
 }
-
 
 void mp_to_json(MemoiProf *mp) {
 
